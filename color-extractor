@@ -1,0 +1,1151 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>استخراج رنگ از تصویر | HEX / RGB / HSL / CMYK + دانلود ASE/JSON/TXT | رایان طرح</title>
+
+  <!-- SEO -->
+  <meta name="description" content="ابزار آنلاین استخراج رنگ از تصویر: تشخیص پالت رنگ‌های غالب با خروجی HEX/RGB/HSL/CMYK، کپی با یک کلیک، ذخیره پالت، دانلود ASE/JSON/TXT. مناسب طراحان گرافیک." />
+  <meta name="robots" content="index,follow" />
+  <link rel="canonical" href="https://rayantarh.com/tools/color-extractor" />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="ابزار استخراج رنگ از تصویر | رایان طرح" />
+  <meta property="og:description" content="HEX / RGB / HSL / CMYK + دانلود ASE/JSON/TXT + ذخیره پالت + انتخاب ناحیه" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://rayantarh.com/tools/color-extractor" />
+
+  <!-- Vazirmatn -->
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vazirmatn@33.0.3/misc/ui/vazirmatn-ui.css">
+
+  <!-- Schema (JSON-LD) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "ابزار استخراج رنگ از تصویر",
+    "url": "https://rayantarh.com/tools/color-extractor",
+    "applicationCategory": "DesignApplication",
+    "operatingSystem": "Any",
+    "description": "استخراج رنگ‌های غالب از تصویر با خروجی HEX/RGB/HSL/CMYK و دانلود ASE/JSON/TXT و ذخیره پالت.",
+    "publisher": {
+      "@type": "Organization",
+      "name": "رایان طرح",
+      "url": "https://rayantarh.com"
+    }
+  }
+  </script>
+
+  <style>
+    :root{
+      --bg:#0b0f17;
+      --card:#121a2a;
+      --muted:#9aa7bf;
+      --text:#e9eefb;
+      --stroke:#24324f;
+      --accent:#4cc9f0;
+      --ok:#22c55e;
+      --warn:#f59e0b;
+      --err:#ef4444;
+      --radius:16px;
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: Vazirmatn UI, Vazirmatn, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: radial-gradient(1200px 800px at 70% 20%, #162243 0%, var(--bg) 55%) no-repeat;
+      color:var(--text);
+      min-height:100vh;
+    }
+    .wrap{ max-width:1200px; margin:0 auto; padding:28px 18px 60px; }
+    .topbar{ display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:18px; }
+    .brand{ display:flex; align-items:center; gap:12px; }
+    .logo{
+      width:42px; height:42px; border-radius:12px;
+      background: linear-gradient(135deg, #ffd166, #06d6a0, #118ab2);
+      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+      border:1px solid rgba(255,255,255,.12);
+    }
+    .title h1{ margin:0; font-size:18px; font-weight:900; letter-spacing:-.2px; }
+    .title p{ margin:4px 0 0; color:var(--muted); font-size:12px; }
+
+    .grid{ display:grid; grid-template-columns: 1.05fr .95fr; gap:16px; }
+    @media (max-width: 980px){ .grid{ grid-template-columns:1fr; } }
+
+    .card{
+      background: rgba(18,26,42,.86);
+      border:1px solid rgba(36,50,79,.8);
+      border-radius: var(--radius);
+      padding:18px;
+      box-shadow: 0 16px 40px rgba(0,0,0,.35);
+      backdrop-filter: blur(6px);
+    }
+    .card h2{ margin:0 0 10px; font-size:15px; font-weight:900; }
+    .hint{ color:var(--muted); font-size:12px; margin:0 0 14px; line-height:1.8; }
+
+    .uploader{
+      border:1px dashed rgba(154,167,191,.35);
+      border-radius: var(--radius);
+      padding:14px;
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      background: rgba(11,15,23,.35);
+    }
+    .uploader input{ width:100%; }
+
+    .btn{
+      border:1px solid rgba(255,255,255,.12);
+      background: linear-gradient(135deg, rgba(76,201,240,.22), rgba(34,197,94,.18));
+      color:var(--text);
+      padding:10px 12px;
+      border-radius: 12px;
+      font-weight:800;
+      cursor:pointer;
+      transition: transform .12s ease, opacity .12s ease;
+      user-select:none;
+      white-space:nowrap;
+    }
+    .btn:active{ transform: scale(.98); opacity:.9; }
+    .btn.danger{ background:rgba(239,68,68,.14); }
+    .btn.ghost{ background: rgba(11,15,23,.35); }
+    .btn.small{ padding:8px 10px; font-size:12px; border-radius: 11px; }
+
+    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:12px; }
+    .select{
+      background: rgba(11,15,23,.4);
+      border:1px solid rgba(255,255,255,.12);
+      color: var(--text);
+      padding:10px 12px;
+      border-radius: 12px;
+      font-weight:800;
+      outline:none;
+      min-width: 150px;
+    }
+
+    .preview{ margin-top:14px; display:grid; grid-template-columns: 1fr; gap:10px; }
+    .imgbox{
+      position:relative;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(11,15,23,.35);
+      border-radius: var(--radius);
+      padding:10px;
+      overflow:hidden;
+    }
+    .imgbox img{
+      width:100%;
+      height:auto;
+      border-radius: 12px;
+      display:block;
+      max-height: 460px;
+      object-fit: contain;
+      background: rgba(0,0,0,.15);
+      user-select:none;
+      pointer-events:none;
+    }
+    .overlay{
+      position:absolute;
+      inset:10px;
+      border-radius: 12px;
+      cursor: crosshair;
+    }
+    .selection{
+      position:absolute;
+      border: 2px solid rgba(76,201,240,.95);
+      background: rgba(76,201,240,.12);
+      border-radius: 10px;
+      display:none;
+      pointer-events:none;
+    }
+    .meta{ display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; color: var(--muted); font-size:12px; }
+
+    .palette{ display:grid; grid-template-columns: 1fr; gap:12px; }
+
+    .swatch{
+      border:1px solid rgba(255,255,255,.12);
+      border-radius: 14px;
+      overflow:hidden;
+      background: rgba(11,15,23,.35);
+    }
+    .swatch-top{ height:52px; }
+    .swatch-body{
+      padding:12px;
+      display:flex;
+      gap:12px;
+      align-items:flex-start;
+      justify-content:space-between;
+      flex-wrap:wrap;
+    }
+    .codes{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap:8px;
+      min-width: min(520px, 100%);
+    }
+    .codeRow{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.18);
+      padding:8px 10px;
+      border-radius: 12px;
+    }
+    .codeLabel{
+      font-size:11px;
+      color: var(--muted);
+      font-weight:800;
+      min-width: 40px;
+    }
+    .codeVal{
+      font-weight:900;
+      letter-spacing:.3px;
+      font-size:12px;
+      direction:ltr;
+      unicode-bidi:bidi-override;
+    }
+    .chip{
+      font-size:11px;
+      padding:6px 9px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.18);
+      white-space:nowrap;
+      font-weight:900;
+    }
+
+    .toolbar{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-top:12px;
+      padding-top:12px;
+      border-top:1px solid rgba(255,255,255,.08);
+    }
+
+    .saved{
+      margin-top:14px;
+      border-top:1px solid rgba(255,255,255,.08);
+      padding-top:14px;
+    }
+    .saved h3{ margin:0 0 10px; font-size:13px; font-weight:900; }
+    .savedList{ display:grid; gap:8px; }
+    .savedItem{
+      display:flex; gap:10px; align-items:center; justify-content:space-between;
+      padding:10px 12px;
+      border-radius: 12px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.16);
+      flex-wrap:wrap;
+    }
+    .savedMeta{ color:var(--muted); font-size:11px; }
+    .miniSwatches{
+      display:flex; gap:6px; align-items:center;
+    }
+    .mini{
+      width:14px; height:14px; border-radius:4px;
+      border:1px solid rgba(255,255,255,.16);
+    }
+
+    .toast{
+      position: fixed;
+      bottom: 18px;
+      left: 18px;
+      background: rgba(18,26,42,.92);
+      border:1px solid rgba(255,255,255,.14);
+      padding:10px 12px;
+      border-radius: 14px;
+      color: var(--text);
+      font-weight:900;
+      box-shadow: 0 16px 40px rgba(0,0,0,.35);
+      transform: translateY(12px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .18s ease, transform .18s ease;
+      max-width: min(92vw, 460px);
+      font-size:12px;
+      line-height:1.6;
+    }
+    .toast.show{ opacity:1; transform: translateY(0); }
+
+    canvas{ display:none; }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div class="title">
+          <h1>ابزار استخراج رنگ از تصویر (پالت حرفه‌ای)</h1>
+          <p>HEX / RGB / HSL / CMYK + ذخیره پالت + دانلود ASE/JSON/TXT + انتخاب ناحیه + حذف پس‌زمینه</p>
+        </div>
+      </div>
+      <a class="btn" href="https://rayantarh.com" target="_blank" rel="noreferrer">rayantarh.com</a>
+    </div>
+
+    <div class="grid">
+      <!-- LEFT -->
+      <section class="card">
+        <h2>۱) تصویر + تنظیمات تحلیل</h2>
+        <p class="hint">
+          ۱) تصویر را آپلود کن. ۲) اگر خواستی فقط یک قسمت را تحلیل کنی، روی تصویر کادر بکش (Region).
+          ۳) اگر پس‌زمینه یکدست است، «حذف پس‌زمینه» را فعال کن تا رنگ‌های واقعی‌تر استخراج شوند.
+        </p>
+
+        <div class="uploader">
+          <input id="file" type="file" accept="image/*" />
+          <button id="analyzeBtn" class="btn">استخراج رنگ‌ها</button>
+        </div>
+
+        <div class="row">
+          <label class="hint" style="margin:0;">تعداد رنگ:</label>
+          <select id="colorCount" class="select">
+            <option value="6">۶</option>
+            <option value="8" selected>۸</option>
+            <option value="10">۱۰</option>
+            <option value="12">۱۲</option>
+            <option value="16">۱۶</option>
+          </select>
+
+          <label class="hint" style="margin:0;">نمونه‌برداری:</label>
+          <select id="quality" class="select">
+            <option value="6">بالا (کندتر)</option>
+            <option value="10" selected>متعادل</option>
+            <option value="18">سریع</option>
+          </select>
+
+          <label class="hint" style="margin:0;">حذف پس‌زمینه:</label>
+          <select id="bgRemove" class="select">
+            <option value="off" selected>خاموش</option>
+            <option value="on">روشن</option>
+          </select>
+
+          <label class="hint" style="margin:0;">شدت حذف BG:</label>
+          <select id="bgThreshold" class="select">
+            <option value="18">کم</option>
+            <option value="26" selected>متوسط</option>
+            <option value="34">زیاد</option>
+          </select>
+
+          <button id="clearRegionBtn" class="btn ghost">حذف کادر انتخاب</button>
+          <button id="resetBtn" class="btn danger">ریست</button>
+        </div>
+
+        <div class="preview">
+          <div class="imgbox" id="imgbox">
+            <img id="previewImg" alt="پیش‌نمایش" />
+            <div class="overlay" id="overlay" title="برای انتخاب ناحیه کلیک و درگ کن"></div>
+            <div class="selection" id="selection"></div>
+          </div>
+          <div class="meta">
+            <span id="metaLeft">—</span>
+            <span id="metaRight">—</span>
+          </div>
+        </div>
+
+        <canvas id="cv"></canvas>
+      </section>
+
+      <!-- RIGHT -->
+      <section class="card">
+        <h2>۲) خروجی پالت (کلیک = کپی)</h2>
+        <p class="hint">
+          هر رنگ: HEX + RGB + HSL + CMYK.  
+          دانلود TXT: <b>هر خط یک HEX</b> (برای Notepad).  
+          دانلود ASE: مناسب Illustrator / Photoshop / …  
+        </p>
+
+        <div class="toolbar">
+          <button id="savePaletteBtn" class="btn small">ذخیره پالت</button>
+          <button id="downloadJsonBtn" class="btn small">دانلود JSON</button>
+          <button id="downloadAseBtn" class="btn small">دانلود ASE</button>
+          <button id="downloadTxtBtn" class="btn small">دانلود TXT (HEX line-by-line)</button>
+          <button id="copyAllHexBtn" class="btn small ghost">کپی همه HEX</button>
+        </div>
+
+        <div id="palette" class="palette" style="margin-top:12px;"></div>
+
+        <div class="saved">
+          <h3>پالت‌های ذخیره‌شده</h3>
+          <div id="savedList" class="savedList"></div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    // ========= Utilities =========
+    const $ = (id) => document.getElementById(id);
+    const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+
+    function toast(msg, type="ok"){
+      const el = $("toast");
+      el.textContent = msg;
+      el.style.borderColor = type==="ok" ? "rgba(34,197,94,.55)" :
+                            type==="warn" ? "rgba(245,158,11,.55)" :
+                                            "rgba(239,68,68,.55)";
+      el.classList.add("show");
+      clearTimeout(toast._t);
+      toast._t = setTimeout(() => el.classList.remove("show"), 1700);
+    }
+
+    async function copyText(txt){
+      try{
+        await navigator.clipboard.writeText(txt);
+        toast("کپی شد: " + txt, "ok");
+      }catch{
+        const ta = document.createElement("textarea");
+        ta.value = txt;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        ta.remove();
+        toast("کپی شد: " + txt, "ok");
+      }
+    }
+
+    function rgbToHex(r,g,b){
+      const toHex = (n) => n.toString(16).padStart(2,"0");
+      return "#" + toHex(r) + toHex(g) + toHex(b);
+    }
+
+    function rgbToHsl(r,g,b){
+      r/=255; g/=255; b/=255;
+      const max = Math.max(r,g,b), min = Math.min(r,g,b);
+      let h=0, s=0, l=(max+min)/2;
+      const d = max-min;
+      if(d !== 0){
+        s = d / (1 - Math.abs(2*l - 1));
+        switch(max){
+          case r: h = ((g-b)/d) % 6; break;
+          case g: h = (b-r)/d + 2; break;
+          case b: h = (r-g)/d + 4; break;
+        }
+        h *= 60;
+        if(h < 0) h += 360;
+      }
+      return {
+        h: Math.round(h),
+        s: Math.round(s*100),
+        l: Math.round(l*100)
+      };
+    }
+
+    function rgbToCmyk(r,g,b){
+      const rp=r/255, gp=g/255, bp=b/255;
+      const k = 1 - Math.max(rp,gp,bp);
+      if(k >= 0.9999){
+        return { c:0, m:0, y:0, k:100 };
+      }
+      const c = (1 - rp - k) / (1 - k);
+      const m = (1 - gp - k) / (1 - k);
+      const y = (1 - bp - k) / (1 - k);
+      return {
+        c: Math.round(c*100),
+        m: Math.round(m*100),
+        y: Math.round(y*100),
+        k: Math.round(k*100)
+      };
+    }
+
+    function fmtRGB({r,g,b}){ return `rgb(${r}, ${g}, ${b})`; }
+    function fmtHSL({h,s,l}){ return `hsl(${h}, ${s}%, ${l}%)`; }
+    function fmtCMYK({c,m,y,k}){ return `cmyk(${c}%, ${m}%, ${y}%, ${k}%)`; }
+
+    function hexContrastText(hex){
+      const r = parseInt(hex.slice(1,3),16);
+      const g = parseInt(hex.slice(3,5),16);
+      const b = parseInt(hex.slice(5,7),16);
+      const yiq = ((r*299)+(g*587)+(b*114))/1000;
+      return yiq >= 150 ? "#0b0f17" : "#e9eefb";
+    }
+
+    function downloadBlob(filename, mime, data){
+      const blob = new Blob([data], { type: mime });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    // ========= Background estimation (corner sampling) =========
+    function estimateBackgroundColor(pixels, w, h){
+      // Sample small blocks near 4 corners, average.
+      const sample = [];
+      const block = Math.max(6, Math.round(Math.min(w,h) * 0.03));
+      function pushBlock(x0,y0){
+        for(let y=y0; y<y0+block; y++){
+          for(let x=x0; x<x0+block; x++){
+            const i = (y*w + x) * 4;
+            const a = pixels[i+3];
+            if(a < 200) continue;
+            sample.push([pixels[i], pixels[i+1], pixels[i+2]]);
+          }
+        }
+      }
+      pushBlock(0,0);
+      pushBlock(w-block,0);
+      pushBlock(0,h-block);
+      pushBlock(w-block,h-block);
+
+      if(sample.length === 0) return [255,255,255];
+
+      let r=0,g=0,b=0;
+      for(const p of sample){ r+=p[0]; g+=p[1]; b+=p[2]; }
+      r=Math.round(r/sample.length);
+      g=Math.round(g/sample.length);
+      b=Math.round(b/sample.length);
+      return [r,g,b];
+    }
+
+    function distRGB(a,b){
+      const dr=a[0]-b[0], dg=a[1]-b[1], db=a[2]-b[2];
+      return Math.sqrt(dr*dr + dg*dg + db*db);
+    }
+
+    // ========= K-means =========
+    function kmeansColors(pixels, k, iterations=12){
+      if(!pixels.length) return [];
+
+      const centers = [];
+      for(let i=0; i<k; i++){
+        const idx = Math.floor((i / k) * (pixels.length - 1));
+        centers.push(pixels[idx].slice());
+      }
+      const assignments = new Array(pixels.length).fill(0);
+
+      for(let it=0; it<iterations; it++){
+        for(let i=0; i<pixels.length; i++){
+          const p = pixels[i];
+          let best = 0, bestDist = Infinity;
+          for(let c=0; c<centers.length; c++){
+            const m = centers[c];
+            const dr = p[0]-m[0], dg = p[1]-m[1], db = p[2]-m[2];
+            const d = dr*dr + dg*dg + db*db;
+            if(d < bestDist){ bestDist = d; best = c; }
+          }
+          assignments[i] = best;
+        }
+
+        const sums = Array.from({length:k}, () => [0,0,0,0]);
+        for(let i=0; i<pixels.length; i++){
+          const a = assignments[i];
+          const p = pixels[i];
+          sums[a][0] += p[0];
+          sums[a][1] += p[1];
+          sums[a][2] += p[2];
+          sums[a][3] += 1;
+        }
+        for(let c=0; c<k; c++){
+          if(sums[c][3] === 0) continue;
+          centers[c][0] = Math.round(sums[c][0]/sums[c][3]);
+          centers[c][1] = Math.round(sums[c][1]/sums[c][3]);
+          centers[c][2] = Math.round(sums[c][2]/sums[c][3]);
+        }
+      }
+
+      const counts = Array.from({length:k}, () => 0);
+      for(const a of assignments) counts[a]++;
+
+      const result = centers.map((c,i) => ({
+        rgb: c,
+        hex: rgbToHex(c[0],c[1],c[2]).toUpperCase(),
+        count: counts[i]
+      })).sort((a,b) => b.count - a.count);
+
+      // Deduplicate near-identical
+      const deduped = [];
+      const minDist = 16;
+      for(const item of result){
+        const ok = deduped.every(d => distRGB(item.rgb, d.rgb) > minDist);
+        if(ok) deduped.push(item);
+      }
+      return deduped;
+    }
+
+    // ========= Pixel extraction with optional region + background removal =========
+    function extractPixelsFromImage(img, qualityStep, region, bgMode, bgThreshold){
+      const cv = $("cv");
+      const ctx = cv.getContext("2d", { willReadFrequently:true });
+
+      const maxW = 1100;
+      const scale = Math.min(1, maxW / img.naturalWidth);
+      const w = Math.max(1, Math.round(img.naturalWidth * scale));
+      const h = Math.max(1, Math.round(img.naturalHeight * scale));
+
+      cv.width = w; cv.height = h;
+      ctx.clearRect(0,0,w,h);
+      ctx.drawImage(img, 0, 0, w, h);
+
+      const imgData = ctx.getImageData(0,0,w,h);
+      const data = imgData.data;
+
+      const step = clamp(parseInt(qualityStep,10), 4, 30);
+      let x1=0,y1=0,x2=w,y2=h;
+      if(region){
+        x1 = clamp(Math.floor(region.x1), 0, w-1);
+        y1 = clamp(Math.floor(region.y1), 0, h-1);
+        x2 = clamp(Math.ceil(region.x2), 1, w);
+        y2 = clamp(Math.ceil(region.y2), 1, h);
+      }
+
+      // background estimation
+      let bg = null;
+      const th = clamp(parseInt(bgThreshold,10), 10, 80);
+      if(bgMode === "on"){
+        bg = estimateBackgroundColor(data, w, h);
+      }
+
+      const pixels = [];
+      for(let y=y1; y<y2; y+=step){
+        for(let x=x1; x<x2; x+=step){
+          const i = (y*w + x) * 4;
+          const a = data[i+3];
+          if(a < 200) continue;
+
+          const r = data[i], g=data[i+1], b=data[i+2];
+
+          if(bg){
+            // ignore pixels close to background color
+            if(distRGB([r,g,b], bg) <= th) continue;
+          }
+
+          pixels.push([r,g,b]);
+        }
+      }
+      return { pixels, w, h, regionUsed: {x1,y1,x2,y2}, bg };
+    }
+
+    // ========= ASE Export =========
+    // Minimal ASE writer for RGB colors.
+    function writeASE(colors, paletteName="Rayantarh Palette"){
+      // Helper: write big-endian
+      const chunks = [];
+      const pushU8 = (v) => chunks.push(Uint8Array.of(v & 255));
+      const pushU16 = (v) => chunks.push(Uint8Array.of((v>>8)&255, v&255));
+      const pushU32 = (v) => chunks.push(Uint8Array.of((v>>24)&255, (v>>16)&255, (v>>8)&255, v&255));
+      const pushStr = (s) => chunks.push(new TextEncoder().encode(s));
+      const pushUTF16BE = (s) => {
+        // ASE uses UTF-16BE with length (number of 16-bit including null)
+        const arr = [];
+        for(let i=0;i<s.length;i++){
+          const code = s.charCodeAt(i);
+          arr.push((code>>8)&255, code&255);
+        }
+        return new Uint8Array(arr);
+      };
+
+      // Header
+      pushStr("ASEF");       // signature
+      pushU16(1); pushU16(0);// version 1.0
+
+      // blocks count = group start + n colors + group end
+      const blockCount = 2 + colors.length;
+      pushU32(blockCount);
+
+      // Group start block (0xC001)
+      // Block: type(2) + length(4) + name(utf16 length+chars)
+      // Name: U16 length (# of 16-bit units including null)
+      {
+        const name = paletteName;
+        const name16 = pushUTF16BE(name + "\u0000");
+        const nameLenUnits = (name.length + 1); // including null
+        // length = 2 (nameLen) + nameLenUnits*2
+        const len = 2 + nameLenUnits*2;
+
+        pushU16(0xC001);
+        pushU32(len);
+        pushU16(nameLenUnits);
+        chunks.push(name16);
+      }
+
+      // Color blocks (0x0001)
+      for(let i=0;i<colors.length;i++){
+        const c = colors[i];
+        const name = c.hex; // name each swatch by hex
+        const name16 = pushUTF16BE(name + "\u0000");
+        const nameLenUnits = (name.length + 1);
+
+        // model "RGB " 4 bytes
+        // 3 floats big-endian (0..1)
+        // color type U16 (0 = global)
+        const model = new TextEncoder().encode("RGB ");
+        const floats = new DataView(new ArrayBuffer(12));
+        floats.setFloat32(0, c.rgb.r/255, false);
+        floats.setFloat32(4, c.rgb.g/255, false);
+        floats.setFloat32(8, c.rgb.b/255, false);
+
+        const len = (2 + nameLenUnits*2) + 4 + 12 + 2;
+
+        pushU16(0x0001);
+        pushU32(len);
+        pushU16(nameLenUnits);
+        chunks.push(name16);
+        chunks.push(model);
+        chunks.push(new Uint8Array(floats.buffer));
+        pushU16(0x0000);
+      }
+
+      // Group end block (0xC002) with length 0
+      pushU16(0xC002);
+      pushU32(0);
+
+      // concat
+      let total = 0;
+      for(const ch of chunks) total += ch.length;
+      const out = new Uint8Array(total);
+      let offset=0;
+      for(const ch of chunks){
+        out.set(ch, offset);
+        offset += ch.length;
+      }
+      return out;
+    }
+
+    // ========= App State =========
+    const state = {
+      objectUrl: null,
+      colors: [],          // enriched colors
+      region: null,        // {x1,y1,x2,y2} in canvas coords
+      lastMeta: null
+    };
+
+    // ========= UI: Region selection =========
+    const overlay = $("overlay");
+    const selection = $("selection");
+    let dragging = false;
+    let start = null;
+
+    function getOverlayRect(){
+      const r = overlay.getBoundingClientRect();
+      return r;
+    }
+
+    function canvasCoordsFromClient(clientX, clientY){
+      // Map overlay coords to canvas coords by ratio between displayed image and natural scaled canvas draw.
+      // We draw to canvas in extractPixelsFromImage with scale-> w,h.
+      // Here we approximate by using previewImg client size ratio.
+      const imgEl = $("previewImg");
+      const rect = overlay.getBoundingClientRect();
+      const x = clamp(clientX - rect.left, 0, rect.width);
+      const y = clamp(clientY - rect.top, 0, rect.height);
+
+      // Convert overlay ratio to image natural ratio, then to canvas (scaled) ratio.
+      // We'll use lastMeta.w/h that match canvas w/h.
+      const meta = state.lastMeta;
+      if(!meta) return {x:0,y:0};
+
+      const cx = (x / rect.width) * meta.w;
+      const cy = (y / rect.height) * meta.h;
+      return { x: cx, y: cy };
+    }
+
+    function showSelectionBox(x1,y1,x2,y2){
+      // Draw selection on overlay in CSS pixels
+      const rect = overlay.getBoundingClientRect();
+      const meta = state.lastMeta;
+      if(!meta) return;
+
+      const left = (Math.min(x1,x2)/meta.w) * rect.width;
+      const top  = (Math.min(y1,y2)/meta.h) * rect.height;
+      const width = (Math.abs(x2-x1)/meta.w) * rect.width;
+      const height= (Math.abs(y2-y1)/meta.h) * rect.height;
+
+      selection.style.display = "block";
+      selection.style.left = (10 + left) + "px";   // imgbox padding inset handled by overlay (inset:10px)
+      selection.style.top  = (10 + top) + "px";
+      selection.style.width = width + "px";
+      selection.style.height = height + "px";
+    }
+
+    function clearRegion(){
+      state.region = null;
+      selection.style.display = "none";
+      toast("کادر انتخاب حذف شد. تحلیل روی کل تصویر انجام می‌شود.", "ok");
+    }
+
+    overlay.addEventListener("mousedown", (e) => {
+      if(!state.lastMeta) return;
+      if(!$("previewImg").src) return;
+
+      dragging = true;
+      const p = canvasCoordsFromClient(e.clientX, e.clientY);
+      start = p;
+      state.region = { x1:p.x, y1:p.y, x2:p.x, y2:p.y };
+      showSelectionBox(p.x,p.y,p.x,p.y);
+    });
+
+    window.addEventListener("mousemove", (e) => {
+      if(!dragging || !state.region || !state.lastMeta) return;
+      const p = canvasCoordsFromClient(e.clientX, e.clientY);
+      state.region.x2 = p.x; state.region.y2 = p.y;
+      showSelectionBox(state.region.x1, state.region.y1, p.x, p.y);
+    });
+
+    window.addEventListener("mouseup", () => {
+      if(!dragging) return;
+      dragging = false;
+      if(!state.region) return;
+
+      const {x1,y1,x2,y2} = state.region;
+      const w = Math.abs(x2-x1);
+      const h = Math.abs(y2-y1);
+
+      if(w < 20 || h < 20){
+        clearRegion();
+        toast("کادر خیلی کوچک بود. دوباره بزرگ‌تر انتخاب کن.", "warn");
+        return;
+      }
+      toast("ناحیه انتخاب شد. استخراج رنگ فقط از همین قسمت انجام می‌شود.", "ok");
+    });
+
+    $("clearRegionBtn").addEventListener("click", clearRegion);
+
+    // ========= Render palette =========
+    function renderPalette(){
+      const wrap = $("palette");
+      wrap.innerHTML = "";
+
+      if(!state.colors.length){
+        wrap.innerHTML = `<div class="hint">هنوز رنگی استخراج نشده. یک تصویر آپلود کن و «استخراج رنگ‌ها» را بزن.</div>`;
+        return;
+      }
+
+      const maxCount = Math.max(...state.colors.map(c => c.count || 1));
+
+      for(const c of state.colors){
+        const percent = Math.round((c.count / maxCount) * 100);
+        const textOnSwatch = hexContrastText(c.hex);
+
+        const sw = document.createElement("div");
+        sw.className = "swatch";
+        sw.innerHTML = `
+          <div class="swatch-top" style="background:${c.hex};"></div>
+          <div class="swatch-body">
+            <div class="codes">
+              <div class="codeRow">
+                <span class="codeLabel">HEX</span>
+                <span class="codeVal">${c.hex}</span>
+                <button class="btn small ghost" data-copy="${c.hex}">کپی</button>
+              </div>
+              <div class="codeRow">
+                <span class="codeLabel">RGB</span>
+                <span class="codeVal">${c.rgbStr}</span>
+                <button class="btn small ghost" data-copy="${c.rgbStr}">کپی</button>
+              </div>
+              <div class="codeRow">
+                <span class="codeLabel">HSL</span>
+                <span class="codeVal">${c.hslStr}</span>
+                <button class="btn small ghost" data-copy="${c.hslStr}">کپی</button>
+              </div>
+              <div class="codeRow">
+                <span class="codeLabel">CMYK</span>
+                <span class="codeVal">${c.cmykStr}</span>
+                <button class="btn small ghost" data-copy="${c.cmykStr}">کپی</button>
+              </div>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:10px; align-items:flex-end;">
+              <div class="chip">${percent}% غالب</div>
+              <div class="chip" style="color:${textOnSwatch}; background:${c.hex}; border-color:rgba(255,255,255,.18);">
+                ${c.hex}
+              </div>
+            </div>
+          </div>
+        `;
+
+        sw.querySelectorAll("[data-copy]").forEach(btn => {
+          btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            copyText(btn.getAttribute("data-copy"));
+          });
+        });
+
+        // Clicking the swatch copies HEX (fast)
+        sw.addEventListener("click", () => copyText(c.hex));
+
+        wrap.appendChild(sw);
+      }
+    }
+
+    // ========= Analyze =========
+    const fileInput = $("file");
+    const previewImg = $("previewImg");
+
+    fileInput.addEventListener("change", () => {
+      const f = fileInput.files?.[0];
+      if(!f) return;
+      if(!f.type.startsWith("image/")){
+        toast("فایل باید تصویر باشد.", "err");
+        return;
+      }
+
+      if(state.objectUrl) URL.revokeObjectURL(state.objectUrl);
+      state.objectUrl = URL.createObjectURL(f);
+      previewImg.src = state.objectUrl;
+
+      $("metaLeft").textContent = `نام فایل: ${f.name}`;
+      $("metaRight").textContent = `حجم: ${Math.round(f.size/1024)} KB`;
+      state.colors = [];
+      state.region = null;
+      selection.style.display = "none";
+      renderPalette();
+      toast("تصویر آماده است. اگر لازم داری کادر بکش، بعد «استخراج رنگ‌ها» را بزن.", "ok");
+    });
+
+    $("analyzeBtn").addEventListener("click", () => {
+      if(!previewImg.src){
+        toast("اول یک تصویر آپلود کن.", "warn");
+        return;
+      }
+      if(!previewImg.complete){
+        toast("تصویر هنوز کامل لود نشده. دوباره بزن.", "warn");
+        return;
+      }
+
+      const k = clamp(parseInt($("colorCount").value,10), 2, 30);
+      const q = $("quality").value;
+      const bgMode = $("bgRemove").value;
+      const bgThreshold = $("bgThreshold").value;
+
+      try{
+        toast("در حال پردازش…", "warn");
+
+        const { pixels, w, h, regionUsed, bg } = extractPixelsFromImage(
+          previewImg, q, state.region, bgMode, bgThreshold
+        );
+
+        state.lastMeta = { w, h };
+
+        const regionText = state.region
+          ? `ناحیه: ${Math.round(regionUsed.x2-regionUsed.x1)}×${Math.round(regionUsed.y2-regionUsed.y1)}`
+          : `کل تصویر`;
+
+        const bgText = bg ? `BG≈ ${rgbToHex(bg[0],bg[1],bg[2]).toUpperCase()} (حذف فعال)` : `BG حذف: خاموش`;
+
+        $("metaRight").textContent = `نمونه‌ها: ${pixels.length} | ${regionText} | ${bgText}`;
+
+        if(pixels.length < 80){
+          toast("پیکسل کافی برای تحلیل نیست. نمونه‌برداری را بالا ببر یا کادر را بزرگ‌تر کن.", "err");
+          return;
+        }
+
+        const iterations = clamp(Math.round(9 + k/2), 9, 18);
+        const raw = kmeansColors(pixels, k, iterations).slice(0, k);
+
+        // Enrich formats
+        state.colors = raw.map((it) => {
+          const rgb = { r: it.rgb[0], g: it.rgb[1], b: it.rgb[2] };
+          const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
+          const cmyk = rgbToCmyk(rgb.r, rgb.g, rgb.b);
+
+          return {
+            hex: it.hex,
+            count: it.count,
+            rgb,
+            hsl,
+            cmyk,
+            rgbStr: fmtRGB(rgb),
+            hslStr: fmtHSL(hsl),
+            cmykStr: fmtCMYK(cmyk)
+          };
+        });
+
+        renderPalette();
+        toast("انجام شد. روی هر مقدار کلیک کن تا کپی بشه.", "ok");
+      }catch(e){
+        console.error(e);
+        toast("خطا در پردازش تصویر.", "err");
+      }
+    });
+
+    $("resetBtn").addEventListener("click", () => {
+      fileInput.value = "";
+      previewImg.removeAttribute("src");
+      if(state.objectUrl) URL.revokeObjectURL(state.objectUrl);
+      state.objectUrl = null;
+      state.colors = [];
+      state.region = null;
+      state.lastMeta = null;
+      selection.style.display = "none";
+      $("metaLeft").textContent = "—";
+      $("metaRight").textContent = "—";
+      renderPalette();
+      toast("ریست شد.", "ok");
+    });
+
+    // ========= Export / Save =========
+    function getExportPayload(){
+      return {
+        tool: "rayantarh-color-extractor",
+        generatedAt: new Date().toISOString(),
+        settings: {
+          colorCount: parseInt($("colorCount").value,10),
+          sampling: parseInt($("quality").value,10),
+          bgRemove: $("bgRemove").value,
+          bgThreshold: parseInt($("bgThreshold").value,10),
+          region: state.region ? state.region : null
+        },
+        colors: state.colors.map((c, idx) => ({
+          index: idx+1,
+          hex: c.hex,
+          rgb: c.rgb,
+          hsl: c.hsl,
+          cmyk: c.cmyk,
+          dominanceHint: c.count
+        }))
+      };
+    }
+
+    $("downloadJsonBtn").addEventListener("click", () => {
+      if(!state.colors.length) return toast("اول رنگ‌ها را استخراج کن.", "warn");
+      const payload = getExportPayload();
+      downloadBlob("rayantarh-palette.json", "application/json;charset=utf-8", JSON.stringify(payload, null, 2));
+      toast("JSON دانلود شد.", "ok");
+    });
+
+    $("downloadTxtBtn").addEventListener("click", () => {
+      if(!state.colors.length) return toast("اول رنگ‌ها را استخراج کن.", "warn");
+      const txt = state.colors.map(c => c.hex).join("\n"); // each line one HEX
+      downloadBlob("rayantarh-colors.txt", "text/plain;charset=utf-8", txt);
+      toast("TXT دانلود شد (هر خط یک HEX).", "ok");
+    });
+
+    $("copyAllHexBtn").addEventListener("click", () => {
+      if(!state.colors.length) return toast("اول رنگ‌ها را استخراج کن.", "warn");
+      const txt = state.colors.map(c => c.hex).join("\n");
+      copyText(txt);
+    });
+
+    $("downloadAseBtn").addEventListener("click", () => {
+      if(!state.colors.length) return toast("اول رنگ‌ها را استخراج کن.", "warn");
+      const ase = writeASE(state.colors, "Rayantarh Palette");
+      downloadBlob("rayantarh-palette.ase", "application/octet-stream", ase);
+      toast("ASE دانلود شد.", "ok");
+    });
+
+    // ========= Save palettes (LocalStorage) =========
+    const LS_KEY = "rayantarh_saved_palettes_v1";
+
+    function loadSaved(){
+      try{
+        return JSON.parse(localStorage.getItem(LS_KEY) || "[]");
+      }catch{
+        return [];
+      }
+    }
+    function saveSaved(list){
+      localStorage.setItem(LS_KEY, JSON.stringify(list));
+    }
+
+    function renderSaved(){
+      const list = loadSaved();
+      const wrap = $("savedList");
+      wrap.innerHTML = "";
+
+      if(list.length === 0){
+        wrap.innerHTML = `<div class="hint">پالتی ذخیره نشده.</div>`;
+        return;
+      }
+
+      for(const item of list){
+        const el = document.createElement("div");
+        el.className = "savedItem";
+        const minis = item.colors.slice(0, 8).map(h => `<span class="mini" style="background:${h};"></span>`).join("");
+        el.innerHTML = `
+          <div>
+            <div style="font-weight:900;">${item.name}</div>
+            <div class="savedMeta">تعداد: ${item.colors.length} | ${new Date(item.createdAt).toLocaleString("fa-IR")}</div>
+          </div>
+          <div class="miniSwatches">${minis}</div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="btn small ghost" data-act="load">بارگذاری</button>
+            <button class="btn small" data-act="json">دانلود JSON</button>
+            <button class="btn small ghost" data-act="txt">TXT</button>
+            <button class="btn small danger" data-act="del">حذف</button>
+          </div>
+        `;
+
+        el.querySelector('[data-act="load"]').addEventListener("click", () => {
+          // Restore into state (only hex list; we rebuild formats)
+          state.colors = item.colors.map((hex) => {
+            const r = parseInt(hex.slice(1,3),16);
+            const g = parseInt(hex.slice(3,5),16);
+            const b = parseInt(hex.slice(5,7),16);
+            const rgb = {r,g,b};
+            const hsl = rgbToHsl(r,g,b);
+            const cmyk = rgbToCmyk(r,g,b);
+            return {
+              hex,
+              count: 1,
+              rgb, hsl, cmyk,
+              rgbStr: fmtRGB(rgb),
+              hslStr: fmtHSL(hsl),
+              cmykStr: fmtCMYK(cmyk)
+            };
+          });
+          renderPalette();
+          toast("پالت بارگذاری شد.", "ok");
+        });
+
+        el.querySelector('[data-act="json"]').addEventListener("click", () => {
+          const payload = {
+            tool: "rayantarh-color-extractor",
+            fromSaved: true,
+            name: item.name,
+            createdAt: item.createdAt,
+            colors: item.colors
+          };
+          downloadBlob(`${item.name}.json`, "application/json;charset=utf-8", JSON.stringify(payload, null, 2));
+        });
+
+        el.querySelector('[data-act="txt"]').addEventListener("click", () => {
+          downloadBlob(`${item.name}.txt`, "text/plain;charset=utf-8", item.colors.join("\n"));
+        });
+
+        el.querySelector('[data-act="del"]').addEventListener("click", () => {
+          const all = loadSaved().filter(x => x.id !== item.id);
+          saveSaved(all);
+          renderSaved();
+          toast("پالت حذف شد.", "ok");
+        });
+
+        wrap.appendChild(el);
+      }
+    }
+
+    $("savePaletteBtn").addEventListener("click", () => {
+      if(!state.colors.length) return toast("اول رنگ‌ها را استخراج کن.", "warn");
+      const name = prompt("اسم پالت را وارد کن (فارسی/انگلیسی):", "پالت-رایان-طرح");
+      if(!name) return;
+
+      const entry = {
+        id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
+        name: name.trim(),
+        createdAt: new Date().toISOString(),
+        colors: state.colors.map(c => c.hex)
+      };
+
+      const list = loadSaved();
+      list.unshift(entry);
+      saveSaved(list.slice(0, 30)); // cap
+      renderSaved();
+      toast("پالت ذخیره شد.", "ok");
+    });
+
+    // Initial
+    $("palette").innerHTML = `<div class="hint">هنوز رنگی استخراج نشده.</div>`;
+    renderSaved();
+  </script>
+</body>
+</html>
