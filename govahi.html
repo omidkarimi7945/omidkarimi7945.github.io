@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>صدور حرفه‌ای مدارک و گواهی‌نامه</title>
+    <!-- Tailwind CSS & Custom Config -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Vazirmatn', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f5f7ff',
+                            100: '#ebf0ff',
+                            200: '#d6e0ff',
+                            300: '#adc2ff',
+                            400: '#7a9cff',
+                            500: '#4f73ff',
+                            600: '#254beb', // رنگ اصلی آبی تیره برند
+                            700: '#1a37c2',
+                            800: '#172d9e',
+                            900: '#16277d',
+                        },
+                        slate: {
+                            950: '#0b0f19',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- External Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;700;850&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Vazirmatn', sans-serif; background-color: #f8fafc; color: #0f172a; }
+        .glass-panel { background: rgba(255, 255, 255, 0.75); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.8); }
+        .canvas-container { position: relative; display: inline-block; box-shadow: 0 30px 60px -15px rgba(15, 23, 42, 0.15); border-radius: 16px; overflow: hidden; background: #fff; }
+        .draggable-text { position: absolute; cursor: move; padding: 6px 12px; border: 2px dashed #4f73ff; background: rgba(79, 115, 255, 0.05); user-select: none; white-space: nowrap; transition: border-color 0.15s, background-color 0.15s, box-shadow 0.15s; pointer-events: auto; border-radius: 8px; }
+        .draggable-text:hover { border-color: #254beb; background: rgba(79, 115, 255, 0.1); box-shadow: 0 4px 12px rgba(79, 115, 255, 0.1); }
+        .active-element { border: 2px solid #ef4444 !important; background: rgba(239, 68, 68, 0.08) !important; z-index: 50; box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.15) !important; }
+        #main-canvas { max-width: 100%; height: auto; display: block; }
+        .step-card { display: none; }
+        .step-card.active { display: block; animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* نوتیفیکیشن ترنزیشن */
+        .toast-animate { animation: toastIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes toastIn { from { transform: translateY(-20px) scale(0.9); opacity: 0; } to { transform: translateY(0) scale(1); opacity: 1; } }
+        
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="p-4 md:p-6 lg:p-8 min-h-screen flex flex-col justify-between relative overflow-x-hidden">
+
+<!-- پس زمینه گرادینت تار و مدرن استایل شبکه‌ای (Decorative Background Mesh) -->
+<div class="fixed inset-0 -z-50 overflow-hidden bg-[#fafbfe]">
+    <div class="absolute -top-[30%] -right-[15%] w-[70%] h-[70%] rounded-full bg-brand-100/50 blur-[130px]"></div>
+    <div class="absolute -bottom-[30%] -left-[15%] w-[70%] h-[70%] rounded-full bg-indigo-100/50 blur-[130px]"></div>
+</div>
+
+<!-- بخش مخفی برای لود فعال فونت‌های شخصی در مرورگر جهت رندر در بوم -->
+<div id="hidden-font-trigger" style="opacity: 0; pointer-events: none; position: absolute; top: -9999px; left: -9999px; width: 0; height: 0; overflow: hidden;"></div>
+
+<div class="max-w-7xl mx-auto w-full flex-grow">
+    <!-- سامانه نمایش پیام (نوتیفیکیشن اختصاصی مدرن فلوتینگ) -->
+    <div id="toast-container" class="fixed top-6 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 max-w-md w-full px-4 pointer-events-none"></div>
+
+    <!-- سربرگ شکیل -->
+    <header class="flex flex-col md:flex-row justify-between items-center mb-10 gap-4 border-b border-slate-100 pb-6">
+        <div class="flex items-center gap-4 text-center md:text-right flex-col md:flex-row">
+            <div class="bg-gradient-to-tr from-brand-600 to-indigo-500 text-white p-3.5 rounded-2xl shadow-xl shadow-brand-200">
+                <i data-lucide="award" class="w-8 h-8"></i>
+            </div>
+            <div>
+                <h1 class="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
+                    سیستم صدور هوشمند <span class="bg-gradient-to-r from-brand-600 to-indigo-600 bg-clip-text text-transparent">مدارک و گواهی‌نامه</span>
+                </h1>
+                <p class="text-slate-400 mt-1.5 text-xs md:text-sm font-medium">پلتفرم مدرن طراحی و خروجی برداری لایو، پالت رنگ هوشمند و تولید دسته‌جمعی</p>
+            </div>
+        </div>
+        <div class="flex gap-2 w-full md:w-auto">
+            <button onclick="saveLayoutToLocal()" class="flex-1 md:flex-none bg-white border border-slate-200 px-4 py-2.5 rounded-xl text-xs md:text-sm font-semibold text-slate-700 hover:bg-slate-50 active:bg-slate-100 transition-all duration-200 shadow-sm flex items-center justify-center gap-2">
+                <i data-lucide="save" class="w-4 h-4 text-slate-500"></i>
+                <span>ذخیره قالب جاری</span>
+            </button>
+            <button onclick="loadLayoutFromLocal()" class="flex-1 md:flex-none bg-brand-50 text-brand-700 px-4 py-2.5 rounded-xl text-xs md:text-sm font-semibold hover:bg-brand-100 active:bg-brand-200 transition-all duration-200 shadow-sm flex items-center justify-center gap-2">
+                <i data-lucide="folder-open" class="w-4 h-4 text-brand-600"></i>
+                <span>بازیابی آخرین طرح</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- نمایش گام‌های پیشرفت شیک -->
+    <nav class="flex items-center justify-center mb-12 max-w-xl mx-auto px-4">
+        <div class="flex items-center w-full relative">
+            <div id="step-line" class="absolute top-1/2 left-0 w-full h-1 bg-slate-200 -z-10 -translate-y-1/2 rounded-full"></div>
+            
+            <div id="step-indicator-1" class="w-11 h-11 rounded-full bg-brand-600 text-white flex items-center justify-center font-bold ring-4 ring-white shadow-lg transition-all duration-300">
+                <i data-lucide="upload-cloud" class="w-5 h-5"></i>
+            </div>
+            <div class="flex-grow"></div>
+            <div id="step-indicator-2" class="w-11 h-11 rounded-full bg-white border border-slate-200 text-slate-400 flex items-center justify-center font-bold ring-4 ring-white shadow-md transition-all duration-300">
+                <i data-lucide="palette" class="w-5 h-5"></i>
+            </div>
+            <div class="flex-grow"></div>
+            <div id="step-indicator-3" class="w-11 h-11 rounded-full bg-white border border-slate-200 text-slate-400 flex items-center justify-center font-bold ring-4 ring-white shadow-md transition-all duration-300">
+                <i data-lucide="file-archive" class="w-5 h-5"></i>
+            </div>
+        </div>
+    </nav>
+
+    <!-- مرحله اول: بارگذاری فایل‌ها -->
+    <div id="step-1" class="step-card active">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- فایل اکسل -->
+            <div class="glass-panel p-8 md:p-10 rounded-3xl shadow-xl shadow-slate-100/50 text-center hover:shadow-2xl hover:border-brand-300 transition-all duration-300 group flex flex-col justify-between min-h-[350px]">
+                <div>
+                    <div class="mx-auto w-20 h-20 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-6 group-hover:scale-110 transition duration-300 shadow-inner">
+                        <i data-lucide="file-spreadsheet" class="w-10 h-10"></i>
+                    </div>
+                    <h3 class="text-lg font-bold mb-2 text-slate-800">داده‌های اکسل</h3>
+                    <p class="text-xs md:text-sm text-slate-400 mb-6 max-w-sm mx-auto leading-relaxed">فایل اکسل یا CSV حاوی ستون‌های اطلاعات گواهی‌گیرندگان (مثلاً نام، تاریخ صدور، رتبه و نمرات)</p>
+                </div>
+                <div>
+                    <input type="file" id="excel-input" accept=".xlsx, .xls, .csv" class="hidden">
+                    <button onclick="document.getElementById('excel-input').click()" class="bg-slate-900 hover:bg-slate-800 text-white px-8 py-3.5 rounded-xl w-full font-bold shadow-lg shadow-slate-200 active:scale-95 transition-all duration-200 flex items-center justify-center gap-2">
+                        <i data-lucide="file-up" class="w-5 h-5"></i>
+                        <span>انتخاب فایل Excel / CSV</span>
+                    </button>
+                    <button onclick="generateSampleExcel()" class="mt-4 text-brand-600 text-xs md:text-sm font-semibold hover:text-brand-800 hover:underline flex items-center justify-center gap-1.5 mx-auto transition">
+                        <i data-lucide="download-cloud" class="w-4 h-4"></i>
+                        <span>دانلود اکسل نمونه جهت تست</span>
+                    </button>
+                    <div id="excel-status" class="mt-4 text-xs md:text-sm font-bold text-emerald-600 flex items-center justify-center gap-1.5"></div>
+                </div>
+            </div>
+
+            <!-- تصویر قالب -->
+            <div class="glass-panel p-8 md:p-10 rounded-3xl shadow-xl shadow-slate-100/50 text-center hover:shadow-2xl hover:border-brand-300 transition-all duration-300 group flex flex-col justify-between min-h-[350px]">
+                <div>
+                    <div class="mx-auto w-20 h-20 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center mb-6 group-hover:scale-110 transition duration-300 shadow-inner">
+                        <i data-lucide="image" class="w-10 h-10"></i>
+                    </div>
+                    <h3 class="text-lg font-bold mb-2 text-slate-800">تصویر قالب گواهی‌نامه</h3>
+                    <p class="text-xs md:text-sm text-slate-400 mb-6 max-w-sm mx-auto leading-relaxed">تصویر خام گواهی‌نامه (بدون متون متغیر) با پسوند JPG یا PNG و باکیفیت و رزولوشن بالا</p>
+                </div>
+                <div>
+                    <input type="file" id="image-input" accept="image/*" class="hidden">
+                    <button onclick="document.getElementById('image-input').click()" class="bg-brand-600 hover:bg-brand-700 text-white px-8 py-3.5 rounded-xl w-full font-bold shadow-lg shadow-brand-200 active:scale-95 transition-all duration-200 flex items-center justify-center gap-2">
+                        <i data-lucide="image-plus" class="w-5 h-5"></i>
+                        <span>انتخاب عکس پس‌زمینه مدرک</span>
+                    </button>
+                    <p class="text-[10px] md:text-xs text-slate-400 mt-4 leading-normal">نکته: رزولوشن بالای عکس اصلی شما برای خروجی‌های نهایی حفظ خواهد شد</p>
+                    <div id="image-status" class="mt-4 text-xs md:text-sm font-bold text-emerald-600 flex items-center justify-center gap-1.5"></div>
+                </div>
+            </div>
+        </div>
+        <div class="mt-12 text-center">
+            <button id="goto-step-2" disabled class="bg-slate-200 text-slate-400 px-16 py-4 rounded-2xl font-bold cursor-not-allowed transition-all shadow-inner flex items-center gap-2 mx-auto">
+                <span>تایید و شروع طراحی پوسته</span>
+                <i data-lucide="arrow-left" class="w-5 h-5"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- مرحله دوم: شخصی‌سازی و جایگذاری (طراح پویا) -->
+    <div id="step-2" class="step-card">
+        <div class="flex flex-col lg:flex-row gap-8">
+            <!-- ستون کنترل ابزارها -->
+            <div class="w-full lg:w-80 shrink-0 space-y-6">
+                <!-- انتخاب ردیف نمونه -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-150">
+                    <h4 class="font-bold text-xs text-slate-500 mb-3 flex items-center gap-2">
+                        <i data-lucide="users" class="w-4 h-4 text-brand-500"></i>
+                        <span>رکورد پیش‌نمایش پوسته</span>
+                    </h4>
+                    <select id="preview-row-select" class="w-full border border-slate-200 rounded-xl p-2.5 text-xs md:text-sm font-medium focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none bg-slate-50 transition"></select>
+                </div>
+
+                <!-- متغیرهای موجود -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-150">
+                    <h4 class="font-bold text-xs text-slate-500 mb-3 flex items-center gap-2">
+                        <i data-lucide="tags" class="w-4 h-4 text-indigo-500"></i>
+                        <span>فیلدهای استخراج‌شده از داده</span>
+                    </h4>
+                    <p class="text-[11px] text-slate-400 mb-3 leading-normal">برای وارد کردن فیلد روی مدرک، بر روی آن کلیک کنید:</p>
+                    <div id="variable-list" class="flex flex-wrap gap-1.5"></div>
+                </div>
+
+                <!-- کنترل‌های استایل و قلم -->
+                <div id="styling-controls" class="hidden bg-white p-5 rounded-2xl shadow-xl border-2 border-brand-500 space-y-4">
+                    <h4 class="font-bold text-sm border-b pb-2 text-brand-600 flex items-center justify-between">
+                        <span class="flex items-center gap-2">
+                            <i data-lucide="settings" class="w-4 h-4 animate-spin-slow"></i>
+                            <span>تنظیمات عنصر فعال</span>
+                        </span>
+                        <button id="delete-element-top" class="text-rose-500 hover:text-rose-700 text-xs font-bold flex items-center gap-1 transition">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                            <span>حذف</span>
+                        </button>
+                    </h4>
+                    
+                    <!-- اندازه قلم -->
+                    <div>
+                        <label class="text-[11px] font-bold text-slate-500 mb-1.5 block">اندازه فونت (پیکسل):</label>
+                        <input type="number" id="font-size" class="w-full border border-slate-200 rounded-xl p-2.5 text-center font-bold bg-slate-50 focus:bg-white focus:border-brand-500 outline-none transition-all duration-150">
+                    </div>
+                    
+                    <!-- تراز متن -->
+                    <div>
+                        <label class="text-[11px] font-bold text-slate-500 mb-1.5 block">تراز متن (بسیار حیاتی):</label>
+                        <div class="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-xl">
+                            <button id="align-right" class="py-1.5 text-xs font-semibold rounded-lg text-center transition flex items-center justify-center gap-1" title="راست‌چین">
+                                <i data-lucide="align-right" class="w-3.5 h-3.5"></i><span>راست</span>
+                            </button>
+                            <button id="align-center" class="py-1.5 text-xs font-semibold rounded-lg text-center transition flex items-center justify-center gap-1" title="وسط‌چین">
+                                <i data-lucide="align-center" class="w-3.5 h-3.5"></i><span>وسط</span>
+                            </button>
+                            <button id="align-left" class="py-1.5 text-xs font-semibold rounded-lg text-center transition flex items-center justify-center gap-1" title="چپ‌چین">
+                                <i data-lucide="align-left" class="w-3.5 h-3.5"></i><span>چپ</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- بخش پالت رنگ و جعبه رنگ جدید -->
+                    <div>
+                        <label class="text-[11px] font-bold text-slate-500 mb-2 block">رنگ قلم (استخراج‌شده / دلخواه):</label>
+                        <!-- پالت رنگ استخراج شده خودکار -->
+                        <div id="image-colors-palette" class="grid grid-cols-4 gap-2 mb-3"></div>
+                        <div class="flex items-center gap-2 bg-slate-50 p-2 rounded-xl border border-slate-100">
+                            <input type="color" id="font-color" class="w-8 h-8 border border-slate-200 rounded-lg p-0.5 cursor-pointer bg-white transition shadow-sm">
+                            <span class="text-[11px] text-slate-400 font-semibold">پالت رنگ اختصاصی مانیتور</span>
+                        </div>
+                    </div>
+
+                    <!-- استایل متن -->
+                    <div>
+                        <label class="text-[11px] font-bold text-slate-500 mb-1.5 block">استایل قلم:</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button id="toggle-bold" class="py-2 border border-slate-200 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1">
+                                <i data-lucide="bold" class="w-3.5 h-3.5"></i>
+                                <span>بولد</span>
+                            </button>
+                            <button id="toggle-italic" class="py-2 border border-slate-200 rounded-xl text-xs italic transition flex items-center justify-center gap-1">
+                                <i data-lucide="italic" class="w-3.5 h-3.5"></i>
+                                <span>ایتالیک</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- انتخاب فونت -->
+                    <div>
+                        <label class="text-[11px] font-bold text-slate-500 mb-1.5 block">خانواده قلم:</label>
+                        <select id="font-family" class="w-full border border-slate-200 rounded-xl p-2.5 text-xs md:text-sm mb-2 focus:border-brand-500 outline-none bg-white">
+                            <option value="Vazirmatn">وزیر متن (پیش‌فرض)</option>
+                            <option value="Arial">Arial</option>
+                            <option value="Tahoma">Tahoma</option>
+                        </select>
+                        <input type="file" id="font-upload" accept=".ttf,.otf,.woff,.woff2" class="hidden">
+                        <button onclick="document.getElementById('font-upload').click()" class="text-[11px] text-brand-600 font-bold hover:text-brand-800 hover:underline flex items-center gap-1.5 mt-1 transition">
+                            <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+                            <span>آپلود فونت جدید (TTF / WOFF)</span>
+                        </button>
+                    </div>
+
+                    <button id="delete-element" class="w-full bg-rose-50 text-rose-600 py-3 rounded-xl text-xs font-bold hover:bg-rose-100 transition duration-150 flex items-center justify-center gap-1.5">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        <span>حذف فیلد از صفحه مدرک</span>
+                    </button>
+                </div>
+                
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200/60 shadow-inner">
+                    <h5 class="font-bold text-xs text-slate-600 mb-1.5 flex items-center gap-1">
+                        <i data-lucide="info" class="w-4 h-4 text-brand-500"></i>
+                        <span>تنظیمات میلی‌متری و پیکسل-پرفکت</span>
+                    </h5>
+                    <p class="text-[11px] text-slate-400 leading-relaxed font-medium">پس از کلیک روی فیلد، می‌توانید آن را با <span class="font-bold text-slate-600">کلیدهای مکان‌نما (جهت‌های کیبورد)</span> به طور دقیق هدایت کنید. کلید <span class="font-bold text-slate-600">Shift</span> سرعت جابجایی را ده برابر می‌کند.</p>
+                </div>
+            </div>
+
+            <!-- بوم طراحی اصلی و زنده -->
+            <div class="flex-grow flex flex-col items-center min-w-0">
+                <div id="canvas-wrapper" class="canvas-container select-none transition-all duration-300">
+                    <canvas id="main-canvas"></canvas>
+                    <div id="overlay-container" class="absolute inset-0 pointer-events-none"></div>
+                </div>
+                <div class="mt-8 flex gap-4 w-full justify-center max-w-lg">
+                    <button onclick="changeStep(1)" class="flex-1 px-8 py-3.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs md:text-sm font-bold transition-all duration-200 flex items-center justify-center gap-2">
+                        <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                        <span>مرحله قبل</span>
+                    </button>
+                    <button onclick="changeStep(3)" class="flex-[1.5] px-12 py-3.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs md:text-sm font-bold shadow-xl shadow-brand-100 transition-all duration-200 flex items-center justify-center gap-2">
+                        <span>خروجی نهایی و دانلود</span>
+                        <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- مرحله سوم: تنظیمات خروجی نهایی -->
+    <div id="step-3" class="step-card">
+        <div class="max-w-2xl mx-auto bg-white p-8 md:p-10 rounded-3xl shadow-xl shadow-slate-100/50 border border-slate-100">
+            <h3 class="text-xl md:text-2xl font-bold mb-6 text-center text-slate-800 flex items-center justify-center gap-2">
+                <i data-lucide="settings-2" class="w-6 h-6 text-brand-500"></i>
+                <span>تنظیمات پایانی و دانلود گواهی‌نامه‌ها</span>
+            </h3>
+            
+            <div class="space-y-6 mb-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block font-bold text-slate-700 mb-3 text-xs md:text-sm">فرمت سند خروجی:</label>
+                        <div class="space-y-2">
+                            <label class="flex items-center gap-3.5 p-3.5 border border-slate-200 rounded-xl cursor-pointer hover:bg-brand-50/40 transition-all duration-200">
+                                <input type="radio" name="export-format" value="jpg" checked class="w-5 h-5 text-brand-600 focus:ring-brand-500 border-slate-300">
+                                <div>
+                                    <span class="font-bold block text-xs md:text-sm text-slate-800">مجموعه تصاویر (JPG)</span>
+                                    <span class="text-[10px] md:text-xs text-slate-400">فشرده شده به صورت پوشه فشرده ZIP</span>
+                                </div>
+                            </label>
+                            <label class="flex items-center gap-3.5 p-3.5 border border-slate-200 rounded-xl cursor-pointer hover:bg-brand-50/40 transition-all duration-200">
+                                <input type="radio" name="export-format" value="pdf-single" class="w-5 h-5 text-brand-600 focus:ring-brand-500 border-slate-300">
+                                <div>
+                                    <span class="font-bold block text-xs md:text-sm text-slate-800">سند پی‌دی‌اف پیوسته (Single PDF)</span>
+                                    <span class="text-[10px] md:text-xs text-slate-400">تمام ردیف‌ها داخل یک فایل PDF چندصفحه‌ای</span>
+                                </div>
+                            </label>
+                            <label class="flex items-center gap-3.5 p-3.5 border border-slate-200 rounded-xl cursor-pointer hover:bg-brand-50/40 transition-all duration-200">
+                                <input type="radio" name="export-format" value="pdf-zip" class="w-5 h-5 text-brand-600 focus:ring-brand-500 border-slate-300">
+                                <div>
+                                    <span class="font-bold block text-xs md:text-sm text-slate-800">سند پی‌دی‌اف مجزا (Separate PDFs)</span>
+                                    <span class="text-[10px] md:text-xs text-slate-400">فایل‌های پی‌دی‌اف تک‌تک افراد به صورت ZIP شده</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                    <!-- کادر هوشمند تنظیم سایز PDF که فقط برای خروجی‌های PDF نمایان است -->
+                    <div id="pdf-size-container" class="transition-all duration-300">
+                        <label class="block font-bold text-slate-700 mb-3 text-xs md:text-sm">سایز صفحه PDF:</label>
+                        <select id="pdf-size" class="w-full border border-slate-200 rounded-xl p-3 outline-none focus:border-brand-500 bg-slate-50 font-medium transition mb-4 text-xs md:text-sm">
+                            <option value="original">اندازه اصلی تصویر پس‌زمینه (باکیفیت‌ترین حالت)</option>
+                            <option value="a4">A4 استاندارد (انطباق هوشمند جهت افقی/عمودی)</option>
+                            <option value="a5">A5 استاندارد</option>
+                        </select>
+                        <div class="p-4 bg-amber-50 rounded-xl border border-amber-100 text-[10px] md:text-xs text-amber-800 leading-relaxed flex gap-2">
+                            <i data-lucide="help-circle" class="w-5 h-5 shrink-0 text-amber-600"></i>
+                            <span>برای خروجی باکیفیت و بدون افت وضوح، ترجیحاً حالت <span class="font-bold">«اندازه اصلی تصویر پس‌زمینه»</span> را انتخاب نمایید تا متون به صورت برداری دقیق روی قالب با حداکثر کیفیت رندر شوند.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- پراگرس بار پردازش فایل‌ها -->
+            <div id="progress-container" class="hidden mb-8 p-5 bg-brand-50 rounded-2xl border border-brand-100 animate-pulse">
+                <div class="w-full bg-brand-100 rounded-full h-3.5 mb-3 overflow-hidden shadow-inner">
+                    <div id="progress-bar" class="bg-brand-600 h-full w-0 transition-all duration-200 rounded-full"></div>
+                </div>
+                <div class="flex justify-between items-center text-xs md:text-sm text-brand-800 font-bold">
+                    <span id="progress-text">آماده‌سازی لایه‌ها...</span>
+                    <span id="progress-percent">0%</span>
+                </div>
+            </div>
+
+            <div class="flex justify-center gap-4">
+                <button onclick="changeStep(2)" class="px-8 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs md:text-sm font-bold transition-all duration-200 flex items-center gap-2">
+                    <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                    <span>بازگشت به طراحی</span>
+                </button>
+                <button id="start-export" class="px-10 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs md:text-sm font-bold shadow-xl shadow-emerald-100 flex items-center gap-2 transition-all duration-200 active:scale-95">
+                    <i data-lucide="rocket" class="w-5 h-5 animate-bounce"></i>
+                    <span>شروع پردازش و دانلود نهایی</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer class="text-center text-[10px] md:text-xs text-slate-400 mt-12 pt-6 border-t border-slate-150">
+    طراحی شده با استانداردهای وب ریسپانسیو و موتور پردازش تصویری مدرن Canvas
+</footer>
+
+<canvas id="off-canvas" class="hidden"></canvas>
+
+<script>
+    // راه‌اندازی آیکون‌های Lucide در شروع اولیه صفحه
+    document.addEventListener("DOMContentLoaded", () => {
+        lucide.createIcons();
+    });
+
+    const { jsPDF } = window.jspdf;
+    let excelData = [];
+    let headers = [];
+    let templateImage = null;
+    let placedElements = [];
+    let activeElementId = null;
+    let originalWidth = 0, originalHeight = 0;
+    let currentPreviewRowIndex = 0;
+    let uploadedFonts = {}; // ساختار: name -> DataURL (Base64)
+    let scale = 1;
+
+    // پالت پیش‌فرض تا پیش از آپلود تصویر قالب
+    let extractedPalette = ['#0f172a', '#2563eb', '#16a34a', '#dc2626', '#8b5cf6', '#ea580c', '#0d9488', '#db2777'];
+
+    const canvas = document.getElementById('main-canvas');
+    const ctx = canvas.getContext('2d');
+    const overlay = document.getElementById('overlay-container');
+
+    // سیستم اختصاصی و مدرن نوتیفیکیشن
+    function showToast(message, type = 'success') {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = `p-4 rounded-2xl shadow-xl border text-xs md:text-sm font-bold pointer-events-auto flex items-center gap-2.5 toast-animate w-full ${
+            type === 'success' ? 'bg-emerald-50 border-emerald-100 text-emerald-800 shadow-emerald-100/50' : 
+            type === 'error' ? 'bg-rose-50 border-rose-100 text-rose-800 shadow-rose-100/50' : 'bg-amber-50 border-amber-100 text-amber-800 shadow-amber-100/50'
+        }`;
+        
+        const iconName = type === 'success' ? 'check-circle-2' : type === 'error' ? 'alert-triangle' : 'help-circle';
+        toast.innerHTML = `<i data-lucide="${iconName}" class="w-5 h-5 shrink-0"></i><span class="flex-grow">${message}</span>`;
+        container.appendChild(toast);
+        lucide.createIcons();
+        
+        // ناپدید شدن تدریجی نوتیفیکیشن
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(-10px) scale(0.95)';
+            toast.style.transition = 'all 0.3s ease';
+            setTimeout(() => toast.remove(), 300);
+        }, 3500);
+    }
+
+    // متدهای تبدیل رنگ برای سیستم پالت رنگ پیشرفته خودکار
+    function rgbToHex(r, g, b) {
+        return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+    }
+
+    function hexToRgb(hex) {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? {
+            r: parseInt(result[1], 16),
+            g: parseInt(result[2], 16),
+            b: parseInt(result[3], 16)
+        } : null;
+    }
+
+    // خوشه‌بندی و استخراج پالت رنگ هوشمند از الگوی بارگذاری شده مدرک
+    function extractColorsFromImage(img, count = 8) {
+        const tempCanvas = document.createElement('canvas');
+        const tempCtx = tempCanvas.getContext('2d');
+        tempCanvas.width = 20;
+        tempCanvas.height = 20;
+        tempCtx.drawImage(img, 0, 0, 20, 20);
+        
+        try {
+            const imgData = tempCtx.getImageData(0, 0, 20, 20).data;
+            const colorsCount = {};
+            
+            for (let i = 0; i < imgData.length; i += 4) {
+                const r = imgData[i];
+                const g = imgData[i+1];
+                const b = imgData[i+2];
+                const a = imgData[i+3];
+                
+                if (a < 220) continue; 
+                
+                const rRound = Math.round(r / 32) * 32;
+                const gRound = Math.round(g / 32) * 32;
+                const bRound = Math.round(b / 32) * 32;
+                
+                const rConst = Math.min(255, Math.max(0, rRound));
+                const gConst = Math.min(255, Math.max(0, gRound));
+                const bConst = Math.min(255, Math.max(0, bRound));
+                
+                const hex = rgbToHex(rConst, gConst, bConst);
+                
+                const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+                if (brightness > 240 || brightness < 20) continue;
+                
+                colorsCount[hex] = (colorsCount[hex] || 0) + 1;
+            }
+            
+            let sortedHex = Object.keys(colorsCount).sort((a, b) => colorsCount[b] - colorsCount[a]);
+            let finalPalette = [...new Set(sortedHex)];
+            
+            const defaults = ['#0f172a', '#2563eb', '#16a34a', '#dc2626', '#8b5cf6', '#ea580c', '#0d9488', '#db2777'];
+            while (finalPalette.length < count) {
+                const nextDef = defaults.find(d => !finalPalette.includes(d));
+                if (nextDef) {
+                    finalPalette.push(nextDef);
+                } else {
+                    break;
+                }
+            }
+            
+            return finalPalette.slice(0, count);
+        } catch (err) {
+            console.error("خطا در سیستم استخراج خودکار رنگ:", err);
+            return ['#0f172a', '#2563eb', '#16a34a', '#dc2626', '#8b5cf6', '#ea580c', '#0d9488', '#db2777'];
+        }
+    }
+
+    // طراحی رندر شیک پالت رنگ‌ها
+    function renderColorPalette() {
+        const container = document.getElementById('image-colors-palette');
+        if (!container) return;
+        container.innerHTML = '';
+        
+        extractedPalette.forEach((hexColor, index) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = "w-full h-8 rounded-lg border-2 border-white shadow hover:scale-110 active:scale-95 transition-all relative focus:outline-none";
+            btn.style.backgroundColor = hexColor;
+            btn.title = `رنگ استخراج شده ${index + 1}: ${hexColor}`;
+            
+            // وضعیت فعال بودن رنگ در فیلد کنونی
+            if (activeElementId) {
+                const el = placedElements.find(p => p.id === activeElementId);
+                if (el && el.color.toLowerCase() === hexColor.toLowerCase()) {
+                    btn.innerHTML = '<span class="absolute inset-0 flex items-center justify-center text-white text-[11px] font-bold"><i data-lucide="check" class="w-4 h-4 text-white"></i></span>';
+                    const rgb = hexToRgb(hexColor);
+                    if (rgb) {
+                        const b = (rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000;
+                        if (b > 180) btn.innerHTML = '<span class="absolute inset-0 flex items-center justify-center text-slate-800 text-[11px] font-bold"><i data-lucide="check" class="w-4 h-4 text-slate-800"></i></span>';
+                    }
+                }
+            }
+            
+            btn.onclick = () => {
+                applyColor(hexColor);
+                renderColorPalette(); 
+            };
+            
+            container.appendChild(btn);
+        });
+        lucide.createIcons();
+    }
+
+    // شنونده فایل اکسل
+    document.getElementById('excel-input').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+            try {
+                const data = evt.target.result;
+                const workbook = XLSX.read(data, { type: 'binary' });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                excelData = XLSX.utils.sheet_to_json(firstSheet);
+                if(excelData.length > 0) {
+                    headers = Object.keys(excelData[0]);
+                    document.getElementById('excel-status').innerHTML = `<i data-lucide="check" class="w-4 h-4"></i><span>رکوردهای یافته شده: ${excelData.length} سطر</span>`;
+                    showToast(`${excelData.length} سطر داده با موفقیت تحلیل گردید.`);
+                    lucide.createIcons();
+                    checkStep1Ready();
+                } else {
+                    showToast('فایل اکسل تهی است یا ساختار نامعتبر دارد.', 'error');
+                }
+            } catch (err) {
+                showToast('خطا در خواندن فایل اکسل!', 'error');
+            }
+        };
+        reader.readAsBinaryString(file);
+    });
+
+    // بارگذاری تصویر الگو
+    document.getElementById('image-input').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+            templateImage = new Image();
+            templateImage.onload = function() {
+                originalWidth = templateImage.width;
+                originalHeight = templateImage.height;
+                document.getElementById('image-status').innerHTML = `<i data-lucide="check" class="w-4 h-4"></i><span>ابعاد الگو: ${originalWidth} در ${originalHeight} پیکسل</span>`;
+                lucide.createIcons();
+
+                // تحلیل خودکار رنگ پس‌زمینه تصویر مدرک و به‌روزرسانی پالت
+                extractedPalette = extractColorsFromImage(templateImage, 8);
+                renderColorPalette();
+                
+                showToast(`تصویر قالب با ابعاد ${originalWidth}x${originalHeight} ثبت و پالت رنگی آن ساخته شد.`);
+                checkStep1Ready();
+            };
+            templateImage.src = evt.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+
+    // ثبت، همگام‌سازی و تزریق فونت در بوم
+    function loadCustomFont(fontName, fontDataUrl) {
+        return new Promise((resolve, reject) => {
+            const styleId = `uploaded-font-${fontName}`;
+            let styleEl = document.getElementById(styleId);
+            if (!styleEl) {
+                styleEl = document.createElement('style');
+                styleEl.id = styleId;
+                styleEl.innerHTML = `@font-face {
+                    font-family: "${fontName}";
+                    src: url("${fontDataUrl}") format("woff2"), url("${fontDataUrl}") format("woff"), url("${fontDataUrl}");
+                    font-weight: normal;
+                    font-style: normal;
+                }`;
+                document.head.appendChild(styleEl);
+            }
+
+            const fontFace = new FontFace(fontName, `url(${fontDataUrl})`);
+            fontFace.load().then(function(loadedFace) {
+                document.fonts.add(loadedFace);
+                uploadedFonts[fontName] = fontDataUrl; 
+
+                const trigger = document.getElementById('hidden-font-trigger');
+                let triggerSpan = document.getElementById(`trigger-${fontName}`);
+                if (!triggerSpan) {
+                    triggerSpan = document.createElement('span');
+                    triggerSpan.id = `trigger-${fontName}`;
+                    triggerSpan.style.fontFamily = `"${fontName}"`;
+                    triggerSpan.innerText = "KeepAlive";
+                    trigger.appendChild(triggerSpan);
+                }
+                resolve(fontName);
+            }).catch(err => {
+                console.error("خطای لود فونت:", err);
+                reject(err);
+            });
+        });
+    }
+
+    // آپلود فونت جدید
+    document.getElementById('font-upload').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if(!file) return;
+        const fontName = file.name.split('.')[0].replace(/\s+/g, '_');
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+            const fontDataUrl = evt.target.result; 
+            
+            loadCustomFont(fontName, fontDataUrl).then(() => {
+                const opt = document.createElement('option');
+                opt.value = fontName;
+                opt.innerText = `${file.name.split('.')[0]} (آپلود شده)`;
+                document.getElementById('font-family').appendChild(opt);
+                document.getElementById('font-family').value = fontName;
+                
+                showToast(`فونت شخصی "${fontName}" با موفقیت روی بوم نصب شد.`);
+                if(activeElementId) {
+                    placedElements.find(p => p.id === activeElementId).font = fontName;
+                    updateAllElementsUI();
+                }
+            }).catch(err => {
+                showToast('بارگذاری فایل فونت ناموفق بود. فرمت فایل نامعتبر است.', 'error');
+            });
+        };
+        reader.readAsDataURL(file); 
+    });
+
+    function applyColor(color) {
+        document.getElementById('font-color').value = color;
+        if(activeElementId) {
+            const el = placedElements.find(p => p.id === activeElementId);
+            el.color = color;
+            updateElementUI(el);
+        }
+    }
+
+    document.getElementById('font-color').addEventListener('input', (e) => {
+        applyColor(e.target.value);
+        renderColorPalette(); 
+    });
+
+    function checkStep1Ready() {
+        const btn = document.getElementById('goto-step-2');
+        if (excelData.length > 0 && templateImage) {
+            btn.disabled = false;
+            btn.classList.replace('bg-slate-200', 'bg-brand-600');
+            btn.classList.replace('text-slate-400', 'text-white');
+            btn.classList.remove('cursor-not-allowed');
+            btn.classList.add('hover:bg-brand-700', 'shadow-xl', 'shadow-brand-100');
+        }
+    }
+
+    document.getElementById('goto-step-2').addEventListener('click', () => {
+        changeStep(2);
+        setTimeout(() => {
+            setupCanvas();
+            populateVariableList();
+            populatePreviewSelector();
+            renderColorPalette();
+        }, 100);
+    });
+
+    function setupCanvas() {
+        if (!templateImage) return;
+        const wrapper = document.getElementById('canvas-wrapper');
+        const containerWidth = wrapper.parentElement.clientWidth - 32;
+        
+        scale = containerWidth / originalWidth;
+        canvas.width = originalWidth * scale;
+        canvas.height = originalHeight * scale;
+        
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(templateImage, 0, 0, canvas.width, canvas.height);
+        
+        overlay.style.width = canvas.width + 'px';
+        overlay.style.height = canvas.height + 'px';
+        overlay.classList.replace('pointer-events-none', 'pointer-events-auto');
+
+        updateAllElementsUI();
+    }
+
+    window.addEventListener('resize', () => {
+        if(document.getElementById('step-2').classList.contains('active')) {
+            setupCanvas();
+        }
+    });
+
+    overlay.addEventListener('click', (e) => {
+        if(e.target === overlay) {
+            deselectAll();
+        }
+    });
+
+    function deselectAll() {
+        activeElementId = null;
+        document.querySelectorAll('.draggable-text').forEach(d => d.classList.remove('active-element'));
+        document.getElementById('styling-controls').classList.add('hidden');
+    }
+
+    function populateVariableList() {
+        const container = document.getElementById('variable-list');
+        container.innerHTML = '';
+        headers.forEach(h => {
+            const btn = document.createElement('button');
+            btn.className = "bg-slate-50 border border-slate-200 text-slate-700 px-3 py-2 rounded-xl text-xs font-semibold hover:border-brand-500 hover:text-brand-600 active:scale-95 hover:bg-white transition-all duration-200 shadow-sm flex items-center gap-1.5";
+            btn.innerHTML = `<span>➕</span> <span>${h}</span>`;
+            btn.onclick = () => addElement(h);
+            container.appendChild(btn);
+        });
+    }
+
+    function populatePreviewSelector() {
+        const sel = document.getElementById('preview-row-select');
+        sel.innerHTML = '';
+        excelData.slice(0, 50).forEach((row, i) => {
+            const opt = document.createElement('option');
+            opt.value = i;
+            opt.innerText = `ردیف پیش‌نمایش ${i+1}: ${String(Object.values(row)[0]).slice(0, 20)}`;
+            sel.appendChild(opt);
+        });
+        sel.onchange = (e) => { 
+            currentPreviewRowIndex = parseInt(e.target.value); 
+            updateAllElementsUI(); 
+        };
+    }
+
+    function addElement(header) {
+        const id = Date.now();
+        const element = { 
+            id, 
+            header, 
+            origX: originalWidth / 2, 
+            origY: originalHeight / 3, 
+            size: Math.round(originalHeight * 0.04), 
+            color: '#0f172a', 
+            font: 'Vazirmatn',
+            align: 'center', 
+            bold: true,
+            italic: false
+        };
+        placedElements.push(element);
+        renderDraggable(element);
+        setActive(id);
+        updateElementUI(element);
+    }
+
+    function renderDraggable(el) {
+        const div = document.createElement('div');
+        div.id = `draggable-${el.id}`;
+        div.className = 'draggable-text';
+        
+        div.addEventListener('mousedown', (e) => { e.stopPropagation(); startDrag(e, el, div); });
+        div.addEventListener('touchstart', (e) => { e.stopPropagation(); startDrag(e, el, div, true); }, { passive: true });
+        
+        div.addEventListener('click', (e) => {
+            e.stopPropagation();
+            setActive(el.id);
+        });
+        
+        overlay.appendChild(div);
+    }
+
+    function startDrag(e, el, div, isTouch = false) {
+        setActive(el.id);
+        
+        const rect = overlay.getBoundingClientRect();
+        const startX = isTouch ? e.touches[0].clientX : e.clientX;
+        const startY = isTouch ? e.touches[0].clientY : e.clientY;
+        
+        const screenX = el.origX * scale;
+        const screenY = el.origY * scale;
+
+        const offsetX = startX - screenX;
+        const offsetY = startY - screenY;
+        
+        const move = (me) => {
+            const clientX = isTouch ? me.touches[0].clientX : me.clientX;
+            const clientY = isTouch ? me.touches[0].clientY : me.clientY;
+            
+            let newScreenX = clientX - offsetX;
+            let newScreenY = clientY - offsetY;
+            
+            newScreenX = Math.max(0, Math.min(newScreenX, canvas.width));
+            newScreenY = Math.max(0, Math.min(newScreenY, canvas.height));
+            
+            el.origX = newScreenX / scale;
+            el.origY = newScreenY / scale;
+            
+            updateElementUI(el);
+        };
+        
+        const end = () => {
+            document.removeEventListener(isTouch ? 'touchmove' : 'mousemove', move);
+            document.removeEventListener(isTouch ? 'touchend' : 'mouseup', end);
+        };
+        
+        document.addEventListener(isTouch ? 'touchmove' : 'mousemove', move);
+        document.addEventListener(isTouch ? 'touchend' : 'mouseup', end);
+    }
+
+    function updateElementUI(el) {
+        const div = document.getElementById(`draggable-${el.id}`);
+        if(!div) return;
+        
+        const row = excelData[currentPreviewRowIndex];
+        div.innerText = row[el.header] !== undefined ? row[el.header] : `{${el.header}}`;
+        
+        const screenX = el.origX * scale;
+        const screenY = el.origY * scale;
+        const currentFontSize = el.size * scale;
+        
+        div.style.fontSize = currentFontSize + 'px';
+        div.style.color = el.color;
+        div.style.fontFamily = `"${el.font}", "Vazirmatn", sans-serif`;
+        div.style.fontWeight = el.bold ? 'bold' : 'normal';
+        div.style.fontStyle = el.italic ? 'italic' : 'normal';
+        
+        div.style.top = screenY + 'px';
+        if (el.align === 'center') {
+            div.style.left = screenX + 'px';
+            div.style.transform = 'translate(-50%, -50%)'; 
+        } else if (el.align === 'left') {
+            div.style.left = screenX + 'px';
+            div.style.transform = 'translate(0, -50%)'; 
+        } else {
+            div.style.left = screenX + 'px';
+            div.style.transform = 'translate(-100%, -50%)'; 
+        }
+    }
+
+    function updateAllElementsUI() {
+        placedElements.forEach(updateElementUI);
+    }
+
+    function setActive(id) {
+        activeElementId = id;
+        document.querySelectorAll('.draggable-text').forEach(d => d.classList.remove('active-element'));
+        const activeDiv = document.getElementById(`draggable-${id}`);
+        if(activeDiv) activeDiv.classList.add('active-element');
+        
+        const el = placedElements.find(p => p.id === id);
+        
+        document.getElementById('styling-controls').classList.remove('hidden');
+        document.getElementById('font-size').value = el.size;
+        document.getElementById('font-color').value = el.color;
+        document.getElementById('font-family').value = el.font;
+        
+        updateAlignButtons(el.align);
+        updateStyleButtons(el.bold, el.italic);
+        renderColorPalette(); 
+    }
+
+    function updateAlignButtons(align) {
+        ['right', 'center', 'left'].forEach(a => {
+            const btn = document.getElementById(`align-${a}`);
+            if (a === align) {
+                btn.className = "py-2 text-xs font-bold rounded-lg text-center bg-brand-600 text-white shadow-md shadow-brand-100 transition flex items-center justify-center gap-1.5";
+            } else {
+                btn.className = "py-2 text-xs font-semibold rounded-lg text-center text-slate-500 hover:bg-slate-200 hover:text-slate-700 transition flex items-center justify-center gap-1.5";
+            }
+        });
+    }
+
+    function updateStyleButtons(bold, italic) {
+        const btnBold = document.getElementById('toggle-bold');
+        const btnItalic = document.getElementById('toggle-italic');
+        
+        if (bold) {
+            btnBold.className = "py-2 border-2 border-brand-600 bg-brand-50 text-brand-600 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5";
+        } else {
+            btnBold.className = "py-2 border border-slate-200 text-slate-500 rounded-xl text-xs font-bold hover:bg-slate-50 transition flex items-center justify-center gap-1.5";
+        }
+        
+        if (italic) {
+            btnItalic.className = "py-2 border-2 border-brand-600 bg-brand-50 text-brand-600 rounded-xl text-xs italic transition flex items-center justify-center gap-1.5";
+        } else {
+            btnItalic.className = "py-2 border border-slate-200 text-slate-500 rounded-xl text-xs italic hover:bg-slate-50 transition flex items-center justify-center gap-1.5";
+        }
+    }
+
+    window.addEventListener('keydown', (e) => {
+        if (!activeElementId) return;
+        const el = placedElements.find(p => p.id === activeElementId);
+        
+        const step = e.shiftKey ? 10 : 1; 
+        
+        if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            el.origY -= step;
+            updateElementUI(el);
+        } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            el.origY += step;
+            updateElementUI(el);
+        } else if (e.key === 'ArrowLeft') {
+            e.preventDefault();
+            el.origX -= step;
+            updateElementUI(el);
+        } else if (e.key === 'ArrowRight') {
+            e.preventDefault();
+            el.origX += step;
+            updateElementUI(el);
+        } else if (e.key === 'Delete') {
+            e.preventDefault();
+            deleteActiveElement();
+        }
+    });
+
+    function saveLayoutToLocal() {
+        if (placedElements.length === 0) {
+            showToast('هیچ فیلدی برای ذخیره‌سازی وجود ندارد!', 'error');
+            return;
+        }
+        const data = { elements: placedElements, fonts: uploadedFonts };
+        localStorage.setItem('cert_generator_v3_saved', JSON.stringify(data));
+        showToast('طرح جاری، پالت رنگ و جانمایی عناصر با موفقیت ذخیره گردید.');
+    }
+
+    function loadLayoutFromLocal() {
+        const saved = localStorage.getItem('cert_generator_v3_saved');
+        if(!saved) {
+            showToast('هیچ طرح ذخیره شده‌ای یافت نشد.', 'error');
+            return;
+        }
+        try {
+            const data = JSON.parse(saved);
+            
+            let fontPromises = [];
+            for(let fName in data.fonts) {
+                if (!uploadedFonts[fName]) {
+                    const promise = loadCustomFont(fName, data.fonts[fName]).then(() => {
+                        if(![...document.getElementById('font-family').options].some(o => o.value === fName)) {
+                            const opt = document.createElement('option');
+                            opt.value = fName;
+                            opt.innerText = `${fName} (بازیابی شده)`;
+                            document.getElementById('font-family').appendChild(opt);
+                        }
+                    });
+                    fontPromises.push(promise);
+                }
+            }
+
+            Promise.all(fontPromises).then(() => {
+                placedElements = data.elements;
+                overlay.innerHTML = '';
+                placedElements.forEach(renderDraggable);
+                updateAllElementsUI();
+                deselectAll();
+                showToast('طرح و فونت‌های شخصی شما با موفقیت بازیابی شد.');
+            });
+        } catch (err) {
+            showToast('خطا در بازیابی اطلاعات ذخیره‌شده!', 'error');
+        }
+    }
+
+    ['right', 'center', 'left'].forEach(a => {
+        document.getElementById(`align-${a}`).addEventListener('click', () => {
+            if(!activeElementId) return;
+            const el = placedElements.find(p => p.id === activeElementId);
+            el.align = a;
+            updateAlignButtons(a);
+            updateElementUI(el);
+        });
+    });
+
+    document.getElementById('toggle-bold').addEventListener('click', () => {
+        if(!activeElementId) return;
+        const el = placedElements.find(p => p.id === activeElementId);
+        el.bold = !el.bold;
+        updateStyleButtons(el.bold, el.italic);
+        updateElementUI(el);
+    });
+
+    document.getElementById('toggle-italic').addEventListener('click', () => {
+        if(!activeElementId) return;
+        const el = placedElements.find(p => p.id === activeElementId);
+        el.italic = !el.italic;
+        updateStyleButtons(el.bold, el.italic);
+        updateElementUI(el);
+    });
+
+    function togglePdfSizeVisibility() {
+        const format = document.querySelector('input[name="export-format"]:checked').value;
+        const container = document.getElementById('pdf-size-container');
+        if (format === 'jpg') {
+            container.classList.add('hidden');
+        } else {
+            container.classList.remove('hidden');
+        }
+    }
+
+    document.querySelectorAll('input[name="export-format"]').forEach(radio => {
+        radio.addEventListener('change', togglePdfSizeVisibility);
+    });
+
+    document.getElementById('start-export').addEventListener('click', async () => {
+        const format = document.querySelector('input[name="export-format"]:checked').value;
+        const pdfSize = document.getElementById('pdf-size').value;
+        const exportBtn = document.getElementById('start-export');
+        const progCont = document.getElementById('progress-container');
+        const progBar = document.getElementById('progress-bar');
+        const progText = document.getElementById('progress-text');
+        const progPercent = document.getElementById('progress-percent');
+
+        exportBtn.disabled = true;
+        progCont.classList.remove('hidden');
+
+        await document.fonts.ready;
+
+        const offCanvas = document.getElementById('off-canvas');
+        offCanvas.width = originalWidth;
+        offCanvas.height = originalHeight;
+        const oCtx = offCanvas.getContext('2d');
+
+        let pdf = null;
+        const zip = (format !== 'pdf-single') ? new JSZip() : null;
+
+        if(format.includes('pdf')) {
+            const orientation = originalWidth > originalHeight ? 'l' : 'p';
+            let finalSize = [originalWidth, originalHeight];
+            let unit = 'px';
+            
+            if(pdfSize === 'a4') { finalSize = originalWidth > originalHeight ? [297, 210] : [210, 297]; unit = 'mm'; }
+            if(pdfSize === 'a5') { finalSize = originalWidth > originalHeight ? [210, 148] : [148, 210]; unit = 'mm'; }
+            
+            pdf = new jsPDF({ 
+                orientation, 
+                unit, 
+                format: pdfSize === 'original' ? [originalWidth, originalHeight] : pdfSize,
+                compress: true
+            });
+        }
+
+        for (let i = 0; i < excelData.length; i++) {
+            const row = excelData[i];
+            
+            oCtx.clearRect(0, 0, originalWidth, originalHeight);
+            oCtx.drawImage(templateImage, 0, 0);
+            
+            placedElements.forEach(el => {
+                let fontStyle = '';
+                if (el.bold) fontStyle += 'bold ';
+                if (el.italic) fontStyle += 'italic ';
+                
+                oCtx.font = `${fontStyle}${el.size}px "${el.font}", "Vazirmatn", sans-serif`;
+                oCtx.fillStyle = el.color;
+                oCtx.textAlign = el.align;
+                oCtx.textBaseline = 'middle'; 
+                
+                const val = row[el.header] !== undefined ? String(row[el.header]) : '';
+                oCtx.fillText(val, el.origX, el.origY);
+            });
+
+            if(format === 'jpg') {
+                const imgData = offCanvas.toDataURL('image/jpeg', 0.92).split(',')[1];
+                zip.file(`cert_${i+1}.jpg`, imgData, {base64: true});
+            } else if (format === 'pdf-single') {
+                if(i > 0) pdf.addPage();
+                const imgData = offCanvas.toDataURL('image/jpeg', 0.88);
+                pdf.addImage(imgData, 'JPEG', 0, 0, pdf.internal.pageSize.getWidth(), pdf.internal.pageSize.getHeight());
+            } else if (format === 'pdf-zip') {
+                const tempPdf = new jsPDF({ 
+                    orientation: originalWidth > originalHeight ? 'l' : 'p', 
+                    unit: 'px', 
+                    format: [originalWidth, originalHeight] 
+                });
+                tempPdf.addImage(offCanvas.toDataURL('image/jpeg', 0.88), 'JPEG', 0, 0, originalWidth, originalHeight);
+                zip.file(`cert_${i+1}.pdf`, tempPdf.output('blob'));
+            }
+
+            const percentage = Math.round(((i+1)/excelData.length)*100);
+            progBar.style.width = percentage + '%';
+            progPercent.innerText = percentage + '%';
+            progText.innerText = `در حال صدور مدرک ${i+1} از ${excelData.length}...`;
+            
+            await new Promise(resolve => setTimeout(resolve, 30));
+        }
+
+        progText.innerText = 'در حال بسته‌بندی فایل‌ها جهت شروع دانلود...';
+        
+        try {
+            if(zip) {
+                const content = await zip.generateAsync({type:"blob"});
+                saveAs(content, "documents_package.zip");
+            } else {
+                pdf.save("all_documents.pdf");
+            }
+            showToast('صدور دسته‌جمعی مدارک با موفقیت به پایان رسید.');
+        } catch (err) {
+            showToast('خطا در فشرده‌سازی فایل‌ها!', 'error');
+        }
+
+        progCont.classList.add('hidden');
+        exportBtn.disabled = false;
+    });
+
+    function changeStep(s) {
+        document.querySelectorAll('.step-card').forEach(c => c.classList.remove('active'));
+        document.getElementById('step-' + s).classList.add('active');
+        
+        if (s === 3) {
+            togglePdfSizeVisibility();
+        }
+
+        for(let i=1; i<=3; i++) {
+            const el = document.getElementById('step-indicator-' + i);
+            if(i < s) { 
+                el.className = "w-11 h-11 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold ring-4 ring-white shadow-lg transition-all duration-300";
+                el.innerHTML = '<i data-lucide="check" class="w-5 h-5 text-white"></i>'; 
+            } else if(i === s) { 
+                el.className = "w-11 h-11 rounded-full bg-brand-600 text-white flex items-center justify-center font-bold ring-4 ring-white shadow-lg transition-all duration-300";
+                const iconName = i === 1 ? 'upload-cloud' : i === 2 ? 'palette' : 'file-archive';
+                el.innerHTML = `<i data-lucide="${iconName}" class="w-5 h-5 text-white"></i>`; 
+            } else { 
+                el.className = "w-11 h-11 rounded-full bg-white border border-slate-200 text-slate-400 flex items-center justify-center font-bold ring-4 ring-white shadow-md transition-all duration-300";
+                const iconName = i === 1 ? 'upload-cloud' : i === 2 ? 'palette' : 'file-archive';
+                el.innerHTML = `<i data-lucide="${iconName}" class="w-5 h-5 text-slate-400"></i>`; 
+            }
+        }
+        lucide.createIcons();
+    }
+
+    // لود داده‌های کاملاً شیک و فیکس شده نمونه جهت تست
+    function generateSampleExcel() {
+        const data = [
+            {"نام و نام خانوادگی": "دکتر علیرضا احمدی", "کد ملی": "123-456789-0", "عنوان دوره": "برنامه‌نویسی پیشرفته وب", "تاریخ صدور": "۱۴۰۲/۱۲/۱۵", "نمره نهایی": "۲۰"},
+            {"نام و نام خانوادگی": "مهندس سارا ستوده", "کد ملی": "098-765432-1", "عنوان دوره": "تحلیل داده با اکسل", "تاریخ صدور": "۱۴۰۲/۱۲/۱۸", "نمره نهایی": "۱۹.۵"},
+            {"نام و نام خانوادگی": "امیرحسین رضایی پور", "کد ملی": "111-222333-4", "عنوان دوره": "طراحی واسط کاربری", "تاریخ صدور": "۱۴۰۲/۱۲/۲۰", "نمره نهایی": "۱۸"}
+        ];
+        const ws = XLSX.utils.json_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "فهرست هنرجویان");
+        XLSX.writeFile(wb, "Sample_Students_Data.xlsx");
+        showToast('فایل اکسل نمونه با موفقیت دانلود شد.');
+    }
+
+    ['font-size', 'font-family'].forEach(id => {
+        document.getElementById(id).addEventListener('input', (e) => {
+            if(!activeElementId) return;
+            const el = placedElements.find(p => p.id === activeElementId);
+            if(id === 'font-size') el.size = parseInt(e.target.value) || 20;
+            if(id === 'font-family') el.font = e.target.value;
+            updateElementUI(el);
+        });
+    });
+
+    function deleteActiveElement() {
+        if(!activeElementId) return;
+        const div = document.getElementById(`draggable-${activeElementId}`);
+        if(div) div.remove();
+        placedElements = placedElements.filter(p => p.id !== activeElementId);
+        activeElementId = null;
+        document.getElementById('styling-controls').classList.add('hidden');
+        showToast('فیلد انتخاب شده حذف گردید.', 'warning');
+    }
+
+    document.getElementById('delete-element').onclick = deleteActiveElement;
+    document.getElementById('delete-element-top').onclick = deleteActiveElement;
+</script>
+
+</body>
+</html>

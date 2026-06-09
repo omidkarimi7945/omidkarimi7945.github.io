@@ -1,0 +1,1616 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>سیستم هوشمند مدیریت باشگاه و صدور برنامه ورزشی</title>
+    
+    <!-- Google Fonts - Vazirmatn برای تایپوگرافی زیبا و مدرن فارسی -->
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@100..900&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Vazirmatn', 'sans-serif'],
+                    },
+                },
+            },
+        }
+    </script>
+
+    <!-- React and ReactDOM CDN -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    
+    <!-- Babel standalone برای کامپایل کدهای JSX در مرورگر -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- کتابخانه مستقل تبدیل مستقیم HTML به PDF واقعی با کیفیت بالا -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+            background-color: #f8fafc;
+        }
+        
+        /* کلاس‌های مخصوص چاپ - حل مشکل عدم چاپ در نسخه قبلی */
+        .print-only {
+            display: none !important;
+        }
+        
+        @media print {
+            body {
+                background: white !important;
+                color: #000 !important;
+                font-size: 9pt !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .print-only {
+                display: block !important;
+            }
+            .page-break {
+                page-break-after: always;
+                break-inside: avoid;
+            }
+            table {
+                width: 100% !important;
+                border-collapse: collapse !important;
+                page-break-inside: auto;
+            }
+            tr {
+                page-break-inside: avoid;
+                page-break-after: auto;
+            }
+            th, td {
+                padding: 4px 6px !important;
+            }
+        }
+        
+        /* استایل اختصاصی جهت جلوگیری از گسستگی حروف فارسی در خروجی PDF */
+        #print-target-area, #print-target-area * {
+            font-family: 'Vazirmatn', sans-serif !important;
+            letter-spacing: 0 !important;
+            word-spacing: normal !important;
+        }
+
+        /* شخصی‌سازی اسکرول‌بار بانک تمرینات */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(241, 245, 249, 1);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(203, 213, 225, 1);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(148, 163, 184, 1);
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-800 antialiased font-sans">
+
+    <div id="root"></div>
+
+    <!-- کامپوننت‌های React درون اسکریپت با تایپ Babel -->
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        // لیست عضلات هدف اصلی در بدنسازی
+        const MUSCLE_GROUPS = ["سینه", "زیربغل و پشت", "سرشانه", "جلوبازو", "پشت‌بازو", "پا", "شکم و فیله", "هوازی"];
+
+        // آیکون‌های SVG سفارشی جهت پایداری کامل بدون نیاز به فونت آیکون
+        const Icons = {
+            Dashboard: () => (
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4zM14 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2v-4z" />
+                </svg>
+            ),
+            Users: () => (
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+            ),
+            Clipboard: () => (
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                </svg>
+            ),
+            Dumbbell: () => (
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6.5 10.5l-4-4m0 0l2.5-2.5m-2.5 2.5l4 4m11 5.5l4 4m0 0l-2.5 2.5m2.5-2.5l-4-4m-1.5-6.5l-3-3m1 6l-3-3m5 10l-3-3m1 6l-3-3M8.5 14l7-7" />
+                </svg>
+            ),
+            Settings: () => (
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+            ),
+            Plus: () => (
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+            ),
+            Trash: () => (
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-16v1a3 3 0 003 3h10M9 3h6m2 5V4a1 1 0 00-1-1H9a1 1 0 00-1 1v4h10z" />
+                </svg>
+            ),
+            Search: () => (
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+            ),
+            Save: () => (
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                </svg>
+            ),
+            Printer: () => (
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                </svg>
+            ),
+            ArrowLeft: () => (
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+            ),
+            ArrowUp: () => (
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+                </svg>
+            ),
+            ArrowDown: () => (
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+            ),
+            Edit: () => (
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+            ),
+            Link: () => (
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                </svg>
+            ),
+            Backup: () => (
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
+                </svg>
+            ),
+            Alert: () => (
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+            )
+        };
+
+        // مبدل‌های تاریخ میلادی به شمسی و بالعکس کاملا آفلاین و مستقل
+        const JalaliDateHelper = {
+            gregorianToJalali: (gy, gm, gd) => {
+                const g_d_m = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 335];
+                let jy, jm, jd;
+                if (gy > 1600) { jy = 979; gy -= 1600; } else { jy = 0; gy -= 621; }
+                const gy2 = (gm > 2) ? (gy + 1) : gy;
+                let days = (365 * gy) + parseInt((gy2 + 3) / 4) - parseInt((gy2 + 99) / 100) + parseInt((gy2 + 399) / 400) - 80 + gd + g_d_m[gm - 1];
+                jy += 33 * parseInt(days / 12053); days %= 12053;
+                jy += 4 * parseInt(days / 1461); days %= 1461;
+                if (days > 365) { jy += parseInt((days - 1) / 365); days = (days - 1) % 365; }
+                jm = (days < 186) ? (1 + parseInt(days / 31)) : (7 + parseInt((days - 186) / 30));
+                jd = 1 + ((days < 186) ? (days % 31) : ((days - 186) % 30));
+                return `${jy}/${String(jm).padStart(2, '0')}/${String(jd).padStart(2, '0')}`;
+            },
+            jalaliToGregorian: (jy, jm, jd) => {
+                let gy, gm, gd;
+                if (jy > 979) { gy = 1600; jy -= 979; } else { gy = 621; }
+                let days = (365 * jy) + parseInt(jy / 33) * 8 + parseInt((jy % 33 + 3) / 4) - 78 + jd + ((jm < 7) ? ((jm - 1) * 31) : (((jm - 7) * 30) + 186));
+                gy += 4 * parseInt(days / 1461); days %= 1461;
+                if (days > 365) { gy += parseInt((days - 1) / 365); days = (days - 1) % 365; }
+                const g_d_m = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+                if ((gy % 4 === 0 && gy % 100 !== 0) || gy % 400 === 0) g_d_m[2] = 29;
+                let i;
+                for (i = 0; i < 13; i++) { if (days <= g_d_m[i]) break; days -= g_d_m[i]; }
+                gm = i; gd = days;
+                return `${gy}-${String(gm).padStart(2, '0')}-${String(gd).padStart(2, '0')}`;
+            },
+            getTodayJalali: () => {
+                const today = new Date();
+                return JalaliDateHelper.gregorianToJalali(today.getFullYear(), today.getMonth() + 1, today.getDate());
+            }
+        };
+
+        // سوپاپ اطمینان برای جلوگیری از سفید شدن صفحه ناشی از تداخل دیتای لوکال استوریج قدیمی
+        class ErrorBoundary extends React.Component {
+            constructor(props) {
+                super(props);
+                this.state = { hasError: false, error: null };
+            }
+
+            static getDerivedStateFromError(error) {
+                return { hasError: true, error };
+            }
+
+            componentDidCatch(error, errorInfo) {
+                console.error("ErrorBoundary caught an error", error, errorInfo);
+            }
+
+            handleReset = () => {
+                localStorage.clear();
+                window.location.reload();
+            };
+
+            render() {
+                if (this.state.hasError) {
+                    return (
+                        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6" dir="rtl">
+                            <div className="bg-white p-8 rounded-3xl border border-red-200 max-w-md w-full shadow-2xl text-center space-y-6">
+                                <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto text-3xl">⚠️</div>
+                                <h1 className="text-xl font-black text-slate-900">بروز خطای غیرمنتظره در سیستم</h1>
+                                <p className="text-slate-500 text-xs leading-relaxed">
+                                    به نظر می‌رسد به دلیل تداخل دیتای کش قدیمی مربی در مرورگر یا فرمت نامعتبر دیتای قبلی، وب‌اپلیکیشن قادر به اجرا نیست. با زدن دکمه زیر اطلاعات را بازنشانی کنید تا برنامه فوراً و بدون مشکل بالا بیاید.
+                                </p>
+                                <div className="text-left bg-slate-50 p-4 rounded-2xl text-[10px] font-mono text-slate-600 max-h-32 overflow-y-auto break-all">
+                                    {this.state.error && this.state.error.toString()}
+                                </div>
+                                <div className="flex gap-3">
+                                    <button onClick={this.handleReset} className="flex-1 bg-red-600 hover:bg-red-700 text-white font-black py-3 rounded-xl transition text-sm">
+                                        پاک‌سازی کش و بازنشانی داده‌ها
+                                    </button>
+                                    <button onClick={() => window.location.reload()} className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-xl transition text-sm">
+                                        تلاش مجدد
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    );
+                }
+
+                return this.props.children;
+            }
+        }
+
+        const App = () => {
+            // بارگذاری ایمن تنظیمات از حافظه محلی
+            const [settings, setSettings] = useState(() => {
+                try {
+                    const saved = localStorage.getItem('coach_settings');
+                    const parsed = saved ? JSON.parse(saved) : null;
+                    if (parsed && typeof parsed === 'object' && parsed.clubName) {
+                        return {
+                            clubName: parsed.clubName || 'باشگاه فیتنس مرکزی',
+                            coaches: Array.isArray(parsed.coaches) ? parsed.coaches : ['استاد علی علوی', 'مربی نمونه'],
+                            logo: parsed.logo || ''
+                        };
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+                return { 
+                    clubName: 'باشگاه فیتنس مرکزی', 
+                    coaches: ['استاد علی علوی', 'مربی نمونه'],
+                    logo: '' 
+                };
+            });
+
+            // بارگذاری ایمن لیست ورزشکاران
+            const [athletes, setAthletes] = useState(() => {
+                try {
+                    const saved = localStorage.getItem('coach_athletes');
+                    const parsed = saved ? JSON.parse(saved) : null;
+                    if (Array.isArray(parsed)) return parsed;
+                } catch (e) {
+                    console.error(e);
+                }
+                return [
+                    { id: 101, name: 'سهراب احمدی', height: '178', weight: '76', goal: 'حجم عضلانی خشک', programCount: 1 },
+                    { id: 102, name: 'امیر قاسمی', height: '185', weight: '92', goal: 'کاهش درصد چربی و فیتنس', programCount: 0 }
+                ];
+            });
+
+            // بارگذاری ایمن بانک حرکات
+            const [exercises, setExercises] = useState(() => {
+                const defaultEx = [
+                    { id: 1, name: 'پرس سینه هالتر روی میز تخت', muscle: 'سینه', equipment: 'هالتر' },
+                    { id: 2, name: 'اسکوات پشت هالتر آزاد', muscle: 'پا', equipment: 'هالتر' },
+                    { id: 3, name: 'زیربغل دمبل تک خم', muscle: 'زیربغل و پشت', equipment: 'دمبل' },
+                    { id: 4, name: 'پرس سرشانه دمبل نشسته', muscle: 'سرشانه', equipment: 'دمبل' },
+                    { id: 5, name: 'جلوبازو هالتر ایستاده لاری', muscle: 'جلوبازو', equipment: 'هالتر کج' },
+                    { id: 6, name: 'پشت‌بازو سیم‌کش با طناب', muscle: 'پشت‌بازو', equipment: 'دستگاه سیم‌کش' },
+                    { id: 7, name: 'کرانچ شکم روی میز شیب‌دار', muscle: 'شکم و فیله', equipment: 'وزنه بدن' },
+                    { id: 8, name: 'دویدن روی تردمیل (اینتروال)', muscle: 'هوازی', equipment: 'تردمیل' }
+                ];
+                try {
+                    const saved = localStorage.getItem('coach_exercises');
+                    const parsed = saved ? JSON.parse(saved) : null;
+                    if (Array.isArray(parsed)) return parsed;
+                } catch (e) {
+                    console.error(e);
+                }
+                return defaultEx;
+            });
+
+            // بارگذاری ایمن برنامه‌های ورزشی صادرشده
+            const [workoutPlans, setWorkoutPlans] = useState(() => {
+                const defaultPlans = [
+                    {
+                        id: 201,
+                        athleteId: 101,
+                        title: 'برنامه هایپرتروفی فاز اول',
+                        coachName: 'استاد علی علوی',
+                        startDate: new Date().toISOString().split('T')[0], 
+                        durationWeeks: 4,
+                        days: [
+                            {
+                                id: 301,
+                                dayTitle: 'روز اول: عضلات سینه و جلوبازو',
+                                exercises: [
+                                    { id: 401, name: 'پرس سینه هالتر روی میز تخت', muscle: 'سینه', equipment: 'هالتر', sets: '4', reps: '10', coachNote: 'انقباض کامل عضلانی سینه در بالا بخش حرکت', isSuperset: 'none' },
+                                    { id: 402, name: 'جلوبازو هالتر ایستاده لاری', muscle: 'جلوبازو', equipment: 'هالتر کج', sets: '4', reps: '12', coachNote: 'آهسته پایین بیاورید و آرنج‌ها را ثابت نگه دارید', isSuperset: 'none' }
+                                ]
+                            }
+                        ]
+                    }
+                ];
+                try {
+                    const saved = localStorage.getItem('coach_plans');
+                    const parsed = saved ? JSON.parse(saved) : null;
+                    if (Array.isArray(parsed)) return parsed;
+                } catch (e) {
+                    console.error(e);
+                }
+                return defaultPlans;
+            });
+
+            const [activeTab, setActiveTab] = useState('dashboard');
+            const [selectedPlanForPrint, setSelectedPlanForPrint] = useState(null);
+            const [isCreatingPlan, setIsCreatingPlan] = useState(false);
+            const [athleteSearchTerm, setAthleteSearchTerm] = useState('');
+            const [exerciseSearchTerm, setExerciseSearchTerm] = useState('');
+            const [selectedMuscleFilter, setSelectedMuscleFilter] = useState('همه');
+
+            const [newAthlete, setNewAthlete] = useState({ name: '', height: '', weight: '', goal: '' });
+            const [newCoachName, setNewCoachName] = useState('');
+            const [toasts, setToasts] = useState([]);
+
+            const [currentPlan, setCurrentPlan] = useState({
+                id: null,
+                athleteId: null,
+                title: '',
+                coachName: '',
+                startDate: new Date().toISOString().split('T')[0], 
+                jalaliStartDate: JalaliDateHelper.getTodayJalali(), 
+                durationWeeks: 4,
+                days: [
+                    { id: Date.now(), dayTitle: 'روز اول', exercises: [] }
+                ]
+            });
+
+            // ذخیره‌سازی داده‌ها به صورت خودکار در حافظه مرورگر با ایمن‌سازی کامل
+            useEffect(() => {
+                try { localStorage.setItem('coach_settings', JSON.stringify(settings)); } catch(e) { console.error(e); }
+            }, [settings]);
+
+            useEffect(() => {
+                try { localStorage.setItem('coach_athletes', JSON.stringify(athletes)); } catch(e) { console.error(e); }
+            }, [athletes]);
+
+            useEffect(() => {
+                try { localStorage.setItem('coach_exercises', JSON.stringify(exercises)); } catch(e) { console.error(e); }
+            }, [exercises]);
+
+            useEffect(() => {
+                try { localStorage.setItem('coach_plans', JSON.stringify(workoutPlans)); } catch(e) { console.error(e); }
+            }, [workoutPlans]);
+
+            const showToast = (message, type = 'success') => {
+                const id = Date.now();
+                setToasts(prev => [...prev, { id, message, type }]);
+                setTimeout(() => {
+                    setToasts(prev => prev.filter(t => t.id !== id));
+                }, 4000);
+            };
+
+            const calculateEndDate = (start, weeks) => {
+                if (!start) return '';
+                const date = new Date(start);
+                date.setDate(date.getDate() + (parseInt(weeks) * 7));
+                return date.toLocaleDateString('fa-IR');
+            };
+
+            const handleAddAthlete = (e) => {
+                e.preventDefault();
+                if (!newAthlete.name.trim()) {
+                    showToast('وارد کردن نام ورزشکار الزامی است.', 'error');
+                    return;
+                }
+                const athlete = { 
+                    ...newAthlete, 
+                    id: Date.now(), 
+                    programCount: 0 
+                };
+                setAthletes([...athletes, athlete]);
+                setNewAthlete({ name: '', height: '', weight: '', goal: '' });
+                showToast(`پرونده جدید برای "${athlete.name}" ایجاد شد.`);
+            };
+
+            const handleDeleteAthlete = (id, name) => {
+                setAthletes(athletes.filter(a => a.id !== id));
+                setWorkoutPlans(workoutPlans.filter(p => p.athleteId !== id));
+                showToast(`ورزشکار "${name}" و تمامی برنامه‌های او حذف شدند.`, 'info');
+            };
+
+            const startNewPlan = () => {
+                setCurrentPlan({
+                    id: Date.now(),
+                    athleteId: athletes[0]?.id || null,
+                    title: '',
+                    coachName: settings.coaches && settings.coaches[0] ? settings.coaches[0] : 'استاد علی علوی',
+                    startDate: new Date().toISOString().split('T')[0],
+                    jalaliStartDate: JalaliDateHelper.getTodayJalali(),
+                    durationWeeks: 4,
+                    days: [{ id: Date.now(), dayTitle: 'روز اول تمرینی', exercises: [] }]
+                });
+                setIsCreatingPlan(true);
+                setActiveTab('plans');
+            };
+
+            const addNewDay = () => {
+                setCurrentPlan({
+                    ...currentPlan,
+                    days: [
+                        ...currentPlan.days, 
+                        { id: Date.now(), dayTitle: `روز ${currentPlan.days.length + 1} تمرینی`, exercises: [] }
+                    ]
+                });
+                showToast('روز تمرینی جدید افزوده شد.');
+            };
+
+            const removeDay = (dayId) => {
+                setCurrentPlan({
+                    ...currentPlan,
+                    days: currentPlan.days.filter(d => d.id !== dayId)
+                });
+                showToast('روز تمرینی با موفقیت حذف شد.', 'info');
+            };
+
+            const addExerciseToDay = (exercise, dayIndex) => {
+                const updatedDays = [...currentPlan.days];
+                updatedDays[dayIndex].exercises.push({
+                    id: Math.random(),
+                    exerciseId: exercise.id,
+                    name: exercise.name,
+                    muscle: exercise.muscle,
+                    equipment: exercise.equipment,
+                    sets: '3',
+                    reps: '12',
+                    coachNote: '',
+                    isSuperset: 'none' 
+                });
+                setCurrentPlan({ ...currentPlan, days: updatedDays });
+                showToast(`حرکت "${exercise.name}" به "${updatedDays[dayIndex].dayTitle}" اضافه شد.`);
+            };
+
+            const handleSupersetChange = (dayIndex, exIndex, value) => {
+                const updatedDays = [...currentPlan.days];
+                updatedDays[dayIndex].exercises[exIndex].isSuperset = value;
+                setCurrentPlan({ ...currentPlan, days: updatedDays });
+                showToast('حالت و نحوه اجرای سوپرست تنظیم شد.');
+            };
+
+            const moveExercise = (dayIndex, exIndex, direction) => {
+                const updatedDays = [...currentPlan.days];
+                const exercisesList = updatedDays[dayIndex].exercises;
+                const targetIndex = direction === 'up' ? exIndex - 1 : exIndex + 1;
+                
+                if (targetIndex < 0 || targetIndex >= exercisesList.length) return;
+
+                const temp = exercisesList[exIndex];
+                exercisesList[exIndex] = exercisesList[targetIndex];
+                exercisesList[targetIndex] = temp;
+
+                setCurrentPlan({ ...currentPlan, days: updatedDays });
+            };
+
+            const deleteExerciseFromDay = (dayIndex, exIndex) => {
+                const updatedDays = [...currentPlan.days];
+                updatedDays[dayIndex].exercises.splice(exIndex, 1);
+                setCurrentPlan({ ...currentPlan, days: updatedDays });
+                showToast('حرکت از روز تمرینی حذف شد.', 'info');
+            };
+
+            const savePlan = (e) => {
+                e.preventDefault();
+                if (!currentPlan.athleteId) {
+                    showToast("لطفاً یک ورزشکار را برای دریافت برنامه انتخاب کنید.", "error");
+                    return;
+                }
+                if (!currentPlan.title.trim()) {
+                    showToast("لطفاً عنوان برنامه را وارد کنید (مثال: برنامه کات فاز دوم).", "error");
+                    return;
+                }
+                
+                const updatedAthletes = athletes.map(a => 
+                    a.id === currentPlan.athleteId ? { ...a, programCount: a.programCount + 1 } : a
+                );
+                setAthletes(updatedAthletes);
+
+                const existingIndex = workoutPlans.findIndex(p => p.id === currentPlan.id);
+                if (existingIndex > -1) {
+                    const updatedPlans = [...workoutPlans];
+                    updatedPlans[existingIndex] = currentPlan;
+                    setWorkoutPlans(updatedPlans);
+                } else {
+                    setWorkoutPlans([...workoutPlans, currentPlan]);
+                }
+                
+                setIsCreatingPlan(false);
+                showToast('برنامه ورزشی با موفقیت ذخیره شد و در لیست قرار گرفت.');
+            };
+
+            const handleJalaliDateChange = (val) => {
+                if (!val) return;
+                const regex = /^(\d{4})\/(\d{2})\/(\d{2})$/;
+                const match = val.match(regex);
+                if (match) {
+                    const jy = parseInt(match[1]);
+                    const jm = parseInt(match[2]);
+                    const jd = parseInt(match[3]);
+                    if (jy >= 1300 && jy <= 1500 && jm >= 1 && jm <= 12 && jd >= 1 && jd <= 31) {
+                        const gDateStr = JalaliDateHelper.jalaliToGregorian(jy, jm, jd);
+                        setCurrentPlan(prev => ({
+                            ...prev,
+                            jalaliStartDate: val,
+                            startDate: gDateStr
+                        }));
+                        showToast('تاریخ شمسی با موفقیت همگام‌سازی شد.');
+                    } else {
+                        setCurrentPlan(prev => ({ ...prev, jalaliStartDate: val }));
+                    }
+                } else {
+                    setCurrentPlan(prev => ({ ...prev, jalaliStartDate: val }));
+                }
+            };
+
+            const handleGregorianDateChange = (val) => {
+                if (!val) return;
+                const parts = val.split('-');
+                if (parts.length === 3) {
+                    const jDateStr = JalaliDateHelper.gregorianToJalali(parseInt(parts[0]), parseInt(parts[1]), parseInt(parts[2]));
+                    setCurrentPlan(prev => ({
+                        ...prev,
+                        startDate: val,
+                        jalaliStartDate: jDateStr
+                    }));
+                }
+            };
+
+            const handleLogoUpload = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        setSettings(prev => ({
+                            ...prev,
+                            logo: reader.result
+                        }));
+                        showToast('لوگوی اختصاصی باشگاه با موفقیت آپلود و ذخیره شد.');
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+
+            const clearLogo = () => {
+                setSettings(prev => ({ ...prev, logo: '' }));
+                showToast('لوگوی باشگاه بازنشانی شد.', 'info');
+            };
+
+            const filteredExercises = useMemo(() => {
+                return exercises.filter(ex => {
+                    const matchesSearch = ex.name && ex.name.toLowerCase().includes(exerciseSearchTerm.toLowerCase());
+                    const matchesFilter = selectedMuscleFilter === 'همه' || ex.muscle === selectedMuscleFilter;
+                    return matchesSearch && matchesFilter;
+                });
+            }, [exercises, exerciseSearchTerm, selectedMuscleFilter]);
+
+            const exportBackup = () => {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(
+                    JSON.stringify({
+                        settings,
+                        athletes,
+                        exercises,
+                        workoutPlans
+                    }, null, 2)
+                );
+                const downloadAnchor = document.createElement('a');
+                downloadAnchor.setAttribute("href", dataStr);
+                downloadAnchor.setAttribute("download", `Fitness_Coach_Backup_${JalaliDateHelper.getTodayJalali().replace(/\//g, '-')}.json`);
+                document.body.appendChild(downloadAnchor);
+                downloadAnchor.click();
+                downloadAnchor.remove();
+                showToast('فایل پشتیبان کامل سیستم دانلود شد.');
+            };
+
+            const handleImportBackup = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        try {
+                            const parsed = JSON.parse(event.target.result);
+                            if (parsed.settings) setSettings(parsed.settings);
+                            if (parsed.athletes) setAthletes(parsed.athletes);
+                            if (parsed.exercises) setExercises(parsed.exercises);
+                            if (parsed.workoutPlans) setWorkoutPlans(parsed.workoutPlans);
+                            showToast('تمام اطلاعات سیستم با موفقیت بازیابی شد.');
+                        } catch (err) {
+                            showToast('خطا در خواندن فایل پشتیبان. فرمت نامعتبر است.', 'error');
+                        }
+                    };
+                    reader.readAsText(file);
+                }
+            };
+
+            const exportAthletesToCSV = () => {
+                let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; 
+                csvContent += "شناسه,نام ورزشکار,قد,وزن,هدف,تعداد برنامه ورزشی\n";
+                
+                athletes.forEach(a => {
+                    csvContent += `${a.id},"${a.name}",${a.height || '-'},${a.weight || '-'},"${a.goal || '-'}",${a.programCount}\n`;
+                });
+
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", `Athletes_List_${JalaliDateHelper.getTodayJalali().replace(/\//g, '-')}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                showToast('لیست ورزشکاران به صورت اکسل (CSV) دانلود شد.');
+            };
+
+            const renewalAthletes = useMemo(() => {
+                const list = [];
+                const today = new Date();
+                
+                if (!Array.isArray(athletes) || !Array.isArray(workoutPlans)) return [];
+                
+                athletes.forEach(athlete => {
+                    const athletePlans = workoutPlans.filter(p => p && p.athleteId === athlete.id);
+                    if (athletePlans.length === 0) return;
+
+                    const latestPlan = athletePlans.reduce((latest, current) => {
+                        const currentD = current && current.startDate ? new Date(current.startDate) : new Date(0);
+                        const latestD = latest && latest.startDate ? new Date(latest.startDate) : new Date(0);
+                        return currentD > latestD ? current : latest;
+                    }, athletePlans[0]);
+
+                    if (!latestPlan) return;
+
+                    const startDate = latestPlan.startDate ? new Date(latestPlan.startDate) : new Date();
+                    const weeks = latestPlan.durationWeeks ? parseInt(latestPlan.durationWeeks) : 4;
+                    const endDate = new Date(startDate.getTime() + (weeks * 7 * 24 * 60 * 60 * 1000));
+                    
+                    const diffTime = endDate - today;
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                    if (diffDays <= 10) {
+                        list.push({
+                            athlete,
+                            latestPlan,
+                            endDate: endDate.toLocaleDateString('fa-IR'),
+                            remainingDays: diffDays
+                        });
+                    }
+                });
+
+                return list;
+            }, [athletes, workoutPlans]);
+
+            // تبدیل مستقیم ساختار HTML پیش‌نمایش به PDF شیک با نام اختصاصی ورزشکار
+            const generatePDF = (plan) => {
+                const athlete = athletes.find(a => a.id === plan.athleteId);
+                const athleteName = athlete ? athlete.name.replace(/\s+/g, '_') : 'ورزشکار';
+                const element = document.getElementById('print-target-area');
+                
+                showToast('در حال آماده‌سازی و دانلود فایل PDF اختصاصی...', 'info');
+                
+                const opt = {
+                    margin:       [10, 10, 10, 10], 
+                    filename:     `برنامه_تمرینی_${athleteName}.pdf`,
+                    image:        { type: 'jpeg', quality: 0.98 },
+                    html2canvas:  { 
+                        scale: 2, 
+                        useCORS: true,
+                    },
+                    jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                    pagebreak:    { mode: ['avoid-all', 'css'] }
+                };
+                
+                html2pdf().set(opt).from(element).save().then(() => {
+                    showToast('برنامه ورزشی به صورت PDF شیک با موفقیت دانلود شد! 🎉', 'success');
+                }).catch(err => {
+                    console.error('PDF generation error:', err);
+                    showToast('خطایی در تولید مستقیم فایل رخ داد. دوباره تلاش کنید.', 'error');
+                });
+            };
+
+            return (
+                <div className="min-h-screen flex flex-col md:flex-row pb-20 md:pb-0">
+                    
+                    {/* لایه اعلان‌ها (Toasts) */}
+                    <div className="fixed bottom-4 left-4 z-[300] space-y-2 no-print">
+                        {toasts.map(t => (
+                            <div key={t.id} className={`p-4 rounded-xl shadow-xl border text-white font-bold text-sm flex items-center gap-2 transform transition-all translate-y-0 duration-300 ${
+                                t.type === 'error' ? 'bg-red-500 border-red-600' :
+                                t.type === 'info' ? 'bg-amber-500 border-amber-600' : 'bg-emerald-600 border-emerald-700'
+                            }`}>
+                                <span className="w-2 h-2 rounded-full bg-white animate-ping"></span>
+                                {t.message}
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* سایدبار ناوبری دسکتاپ */}
+                    <aside className="fixed right-0 top-0 h-full w-64 bg-slate-900 text-slate-100 p-6 hidden md:block z-50 no-print">
+                        <div className="flex items-center gap-3 mb-10 border-b border-slate-800 pb-5">
+                            {settings.logo ? (
+                                <img src={settings.logo} className="w-12 h-12 rounded-xl object-cover border border-slate-700" alt="لوگو" />
+                            ) : (
+                                <div className="p-2.5 bg-blue-600 rounded-xl shadow-lg shadow-blue-500/30 text-white font-black text-center text-xs">
+                                    {settings.clubName ? settings.clubName[0] : '🏋️'}
+                                </div>
+                            )}
+                            <div className="min-w-0">
+                                <h1 className="text-sm font-black truncate">{settings.clubName}</h1>
+                                <p className="text-[10px] text-slate-400 mt-0.5">پنل هوشمند مربیان</p>
+                            </div>
+                        </div>
+                        
+                        <nav className="space-y-1.5">
+                            <NavItem active={activeTab === 'dashboard'} onClick={() => {setActiveTab('dashboard'); setIsCreatingPlan(false)}} icon={<Icons.Dashboard />} label="داشبورد آماری" />
+                            <NavItem active={activeTab === 'athletes'} onClick={() => {setActiveTab('athletes'); setIsCreatingPlan(false)}} icon={<Icons.Users />} label="مدیریت ورزشکاران" />
+                            <NavItem active={activeTab === 'plans'} onClick={() => setActiveTab('plans')} icon={<Icons.Clipboard />} label="طراحی برنامه ورزشی" />
+                            <NavItem active={activeTab === 'renewals'} onClick={() => setActiveTab('renewals')} icon={<Icons.Alert />} label="سررسید برنامه‌ها" badge={renewalAthletes.length} />
+                            <NavItem active={activeTab === 'bank'} onClick={() => setActiveTab('bank')} icon={<Icons.Dumbbell />} label="بانک تمرینات" />
+                            <NavItem active={activeTab === 'backup'} onClick={() => setActiveTab('backup')} icon={<Icons.Backup />} label="پشتیبان‌گیری داده‌ها" />
+                            <NavItem active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} icon={<Icons.Settings />} label="تنظیمات سیستم" />
+                        </nav>
+
+                        <div className="absolute bottom-6 right-6 left-6 p-4 bg-slate-800/50 rounded-2xl border border-slate-700/50">
+                            <p className="text-[10px] text-slate-400 font-bold leading-normal">برای دانلود فایل PDF با کیفیت، از دکمه "دانلود مستقیم فایل PDF" استفاده کنید.</p>
+                        </div>
+                    </aside>
+
+                    {/* بخش محتوای اصلی */}
+                    <main className="flex-1 md:pr-64 p-4 md:p-8 max-w-7xl mx-auto w-full no-print">
+                        
+                        {/* 1. داشبورد */}
+                        {activeTab === 'dashboard' && (
+                            <div className="space-y-6">
+                                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm gap-4">
+                                    <div className="flex items-center gap-4">
+                                        {settings.logo && <img src={settings.logo} className="w-16 h-16 rounded-2xl object-cover shadow border" alt="لوگو" />}
+                                        <div>
+                                            <h2 className="text-2xl font-black text-slate-900 font-sans">سلام مربی خوش آمدید! 👋</h2>
+                                            <p className="text-slate-500 text-xs mt-1">مدیریت ورزشکاران و طراحی برنامه تمرینی آسان‌تر از همیشه.</p>
+                                        </div>
+                                    </div>
+                                    <span className="text-xs bg-blue-50 text-blue-700 px-4 py-2 rounded-xl font-bold border border-blue-100">{settings.clubName}</span>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                                    <StatCard title="ورزشکاران فعال باشگاه" value={athletes.length} icon={<Icons.Users />} color="bg-blue-50 text-blue-600" />
+                                    <StatCard title="کل برنامه‌های صادرشده" value={workoutPlans.length} icon={<Icons.Clipboard />} color="bg-emerald-50 text-emerald-600" />
+                                    <StatCard title="بانک تمرینات" value={exercises.length} icon={<Icons.Dumbbell />} color="bg-violet-50 text-violet-600" />
+                                    <StatCard title="برنامه‌های سررسید شده" value={renewalAthletes.length} icon={<Icons.Alert />} color="bg-amber-50 text-amber-600" />
+                                </div>
+
+                                <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
+                                    <h2 className="text-lg font-black mb-4 flex items-center gap-2 text-slate-900">
+                                        <span className="w-1.5 h-6 bg-blue-600 rounded-full"></span>
+                                        دسترسی‌های سریع مربی
+                                    </h2>
+                                    <div className="flex flex-wrap gap-4">
+                                        <button onClick={startNewPlan} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3.5 rounded-2xl font-bold flex items-center gap-2 transition shadow-lg shadow-blue-500/10">
+                                            <Icons.Plus /> نوشتن برنامه ورزشی جدید
+                                        </button>
+                                        <button onClick={() => setActiveTab('athletes')} className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-6 py-3.5 rounded-2xl font-bold flex items-center gap-2 transition">
+                                            <Icons.Users /> افزودن ورزشکار جدید
+                                        </button>
+                                        <button onClick={() => setActiveTab('renewals')} className="bg-amber-100 hover:bg-amber-200 text-amber-800 px-6 py-3.5 rounded-2xl font-bold flex items-center gap-2 transition">
+                                            <Icons.Alert /> وضعیت تمدیدها
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* 2. مدیریت ورزشکاران */}
+                        {activeTab === 'athletes' && (
+                            <div className="space-y-6">
+                                <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm">
+                                    <h3 className="text-lg font-black mb-4 flex items-center gap-2 text-slate-950">
+                                        <Icons.Users /> ثبت ورزشکار جدید در پرونده الکترونیک
+                                    </h3>
+                                    <form onSubmit={handleAddAthlete} className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                                        <input required className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white font-bold" placeholder="نام و نام خانوادگی ورزشکار *" value={newAthlete.name} onChange={e => setNewAthlete({...newAthlete, name: e.target.value})} />
+                                        <input className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white font-bold" placeholder="قد (سانتی‌متر)" value={newAthlete.height} onChange={e => setNewAthlete({...newAthlete, height: e.target.value})} />
+                                        <input className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white font-bold" placeholder="وزن (کیلوگرم)" value={newAthlete.weight} onChange={e => setNewAthlete({...newAthlete, weight: e.target.value})} />
+                                        <input className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm md:col-span-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white font-bold" placeholder="هدف ورزشی (کات، حجم و...)" value={newAthlete.goal} onChange={e => setNewAthlete({...newAthlete, goal: e.target.value})} />
+                                        <button type="submit" className="bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition flex items-center justify-center gap-2 py-3">
+                                            <Icons.Plus /> ایجاد پرونده
+                                        </button>
+                                    </form>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    {athletes.map(a => (
+                                        <div key={a.id} className="bg-white p-6 rounded-2xl border border-slate-200/60 shadow-sm hover:shadow-md transition relative flex flex-col justify-between">
+                                            <div>
+                                                <div className="flex justify-between items-start">
+                                                    <h4 className="font-bold text-lg text-slate-900">{a.name}</h4>
+                                                    <button onClick={() => handleDeleteAthlete(a.id, a.name)} className="text-slate-300 hover:text-red-500 transition-colors p-1" title="حذف پرونده">
+                                                        <Icons.Trash />
+                                                    </button>
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-3 mt-4 text-xs text-slate-500 border-t pt-3 border-slate-100 font-bold">
+                                                    <div>📏 قد: <span className="font-black text-slate-800">{a.height || '-'} سانتی‌متر</span></div>
+                                                    <div>⚖️ وزن: <span className="font-black text-slate-800">{a.weight || '-'} کیلوگرم</span></div>
+                                                </div>
+                                            </div>
+                                            <div className="mt-5 space-y-3">
+                                                <div className="p-3 bg-slate-50 rounded-xl text-xs">
+                                                    <span className="text-slate-400 block mb-1">هدف اختصاصی:</span>
+                                                    <span className="font-bold text-slate-800 block truncate">{a.goal || 'توضیحات ثبت نشده'}</span>
+                                                </div>
+                                                <div className="flex justify-between items-center text-xs text-slate-500 bg-blue-50/40 p-2.5 rounded-xl border border-blue-100/30">
+                                                    <span>تعداد برنامه‌های صادرشده:</span>
+                                                    <span className="font-black text-blue-700 text-sm">{a.programCount} فاز</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* 3. لیست برنامه‌ها یا سازنده برنامه */}
+                        {activeTab === 'plans' && isCreatingPlan && (
+                            <div className="space-y-6">
+                                <div className="flex flex-col sm:flex-row justify-between items-center bg-white p-5 rounded-2xl border border-slate-200 gap-4">
+                                    <button onClick={() => setIsCreatingPlan(false)} className="text-slate-600 flex items-center gap-1 font-bold text-sm hover:text-slate-900 border px-4 py-2.5 rounded-xl bg-slate-50">
+                                        <Icons.ArrowLeft /> انصراف و بازگشت
+                                    </button>
+                                    <h2 className="font-black text-xl text-slate-900">طراح حرفه‌ای برنامه ورزشی</h2>
+                                    <button onClick={savePlan} className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-emerald-500/10">
+                                        <Icons.Save /> ذخیره و تایید نهایی
+                                    </button>
+                                </div>
+
+                                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                                    {/* اطلاعات پایه برنامه */}
+                                    <div className="lg:col-span-12 bg-white p-6 rounded-3xl border border-slate-200 grid grid-cols-1 md:grid-cols-4 gap-6">
+                                        <div>
+                                            <label className="text-xs font-bold text-slate-500 block mb-2">انتخاب ورزشکار دریافت‌کننده *</label>
+                                            <select className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={currentPlan.athleteId || ''} onChange={e => setCurrentPlan({...currentPlan, athleteId: parseInt(e.target.value)})}>
+                                                <option value="">انتخاب ورزشکار...</option>
+                                                {athletes.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-bold text-slate-500 block mb-2">عنوان برنامه تمرینی *</label>
+                                            <input className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none font-bold" value={currentPlan.title} onChange={e => setCurrentPlan({...currentPlan, title: e.target.value})} placeholder="مثال: کات فاز دوم" />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-bold text-slate-500 block mb-2">مربی ارائه‌دهنده</label>
+                                            <select className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-sm focus:ring-2 focus:ring-blue-500 outline-none" value={currentPlan.coachName} onChange={e => setCurrentPlan({...currentPlan, coachName: e.target.value})}>
+                                                {settings.coaches && settings.coaches.map(c => <option key={c} value={c}>{c}</option>)}
+                                            </select>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <div>
+                                                <label className="text-xs font-bold text-slate-500 block mb-1">تاریخ شروع (شمسی)</label>
+                                                <input type="text" className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none text-center font-bold" value={currentPlan.jalaliStartDate || ''} onChange={e => handleJalaliDateChange(e.target.value)} placeholder="مثال: ۱۴۰۵/۰۲/۲۶" />
+                                                <span className="text-[9px] text-slate-400 block mt-0.5 text-center">ویرایش دستی مجاز است</span>
+                                            </div>
+                                            <div>
+                                                <label className="text-xs font-bold text-slate-500 block mb-1">میلادی معادل</label>
+                                                <input type="date" className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none text-center" value={currentPlan.startDate || ''} onChange={e => handleGregorianDateChange(e.target.value)} />
+                                            </div>
+                                            <div className="col-span-2">
+                                                <label className="text-xs font-bold text-slate-500 block mb-1">مدت برنامه (هفته)</label>
+                                                <input type="number" className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black outline-none text-center" value={currentPlan.durationWeeks} onChange={e => setCurrentPlan({...currentPlan, durationWeeks: e.target.value})} />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* طراحی روزهای تمرینی */}
+                                    <div className="lg:col-span-8 space-y-6">
+                                        {currentPlan.days && currentPlan.days.map((day, dIdx) => (
+                                            <div key={day.id} className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
+                                                <div className="bg-slate-50 p-4 border-b border-slate-200 flex justify-between items-center">
+                                                    <input className="bg-transparent font-black text-slate-800 text-lg outline-none border-b-2 border-transparent focus:border-blue-500" value={day.dayTitle} onChange={e => {
+                                                        const days = [...currentPlan.days];
+                                                        days[dIdx].dayTitle = e.target.value;
+                                                        setCurrentPlan({...currentPlan, days});
+                                                    }} />
+                                                    <button onClick={() => removeDay(day.id)} className="text-slate-400 hover:text-red-500 p-2 rounded-lg transition-colors" title="حذف این روز تمرینی">
+                                                        <Icons.Trash />
+                                                    </button>
+                                                </div>
+                                                
+                                                <div className="p-4 space-y-4 min-h-[120px]">
+                                                    {day.exercises && day.exercises.map((item, eIdx) => (
+                                                        <div key={item.id} className={`flex flex-col md:flex-row gap-4 p-4 rounded-2xl border transition duration-200 ${item.isSuperset === 'next' ? 'border-r-8 border-r-blue-500 bg-blue-50/20 border-blue-100' : 'bg-white border-slate-200'}`}>
+                                                            
+                                                            {/* عنوان و ویژگی‌های تمرین */}
+                                                            <div className="md:w-1/3 flex flex-col justify-between">
+                                                                <div>
+                                                                    <span className="text-[10px] font-black text-blue-600 block mb-1 uppercase tracking-wider">{item.muscle}</span>
+                                                                    <h5 className="font-bold text-sm text-slate-900">{item.name}</h5>
+                                                                    <span className="text-[10px] text-slate-400 block mt-0.5">تجهیزات: {item.equipment || 'وزنه آزاد'}</span>
+                                                                </div>
+                                                                
+                                                                <div className="mt-3">
+                                                                    <label className="text-[9px] text-slate-400 font-bold block mb-1">نوع اجرای ست:</label>
+                                                                    <select value={item.isSuperset || 'none'} onChange={e => handleSupersetChange(dIdx, eIdx, e.target.value)} className="p-2 bg-slate-100 border rounded-xl text-xs font-bold outline-none text-slate-700 w-full">
+                                                                        <option value="none">حرکت معمولی</option>
+                                                                        <option value="next">سوپرست با حرکت بعدی ↓</option>
+                                                                    </select>
+                                                                </div>
+                                                            </div>
+
+                                                            {/* ورودی مقادیر ست و تکرار */}
+                                                            <div className="flex-1 grid grid-cols-2 md:grid-cols-3 gap-3">
+                                                                <div>
+                                                                    <label className="text-[10px] text-slate-400 font-bold block mb-1">ست‌ها</label>
+                                                                    <input className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-center font-black text-sm" placeholder="تعداد ست" value={item.sets} onChange={e => {
+                                                                       const days = [...currentPlan.days];
+                                                                       days[dIdx].exercises[eIdx].sets = e.target.value;
+                                                                       setCurrentPlan({...currentPlan, days});
+                                                                    }} />
+                                                                </div>
+                                                                <div>
+                                                                    <label className="text-[10px] text-slate-400 font-bold block mb-1">تکرارها</label>
+                                                                    <input className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-center font-black text-sm" placeholder="تعداد تکرار" value={item.reps} onChange={e => {
+                                                                       const days = [...currentPlan.days];
+                                                                       days[dIdx].exercises[eIdx].reps = e.target.value;
+                                                                       setCurrentPlan({...currentPlan, days});
+                                                                    }} />
+                                                                </div>
+                                                                <div className="col-span-2 md:col-span-1">
+                                                                    <label className="text-[10px] text-slate-400 font-bold block mb-1">توصیه مربی</label>
+                                                                    <input className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs" placeholder="توضیحات و نکات..." value={item.coachNote} onChange={e => {
+                                                                       const days = [...currentPlan.days];
+                                                                       days[dIdx].exercises[eIdx].coachNote = e.target.value;
+                                                                       setCurrentPlan({...currentPlan, days});
+                                                                    }} />
+                                                                </div>
+                                                            </div>
+
+                                                            {/* کنترلر و دکمه‌های جابه‌جایی و حذف */}
+                                                            <div className="flex md:flex-col items-center justify-center gap-2 border-t md:border-t-0 md:border-r pt-3 md:pt-0 md:pr-3 border-slate-100">
+                                                                <button onClick={() => moveExercise(dIdx, eIdx, 'up')} disabled={eIdx === 0} className={`p-1 rounded-lg border transition ${eIdx === 0 ? 'text-slate-200 border-slate-100 cursor-not-allowed' : 'text-slate-600 hover:bg-slate-100 border-slate-200'}`} title="انتقال به بالا">
+                                                                    <Icons.ArrowUp />
+                                                                </button>
+                                                                <button onClick={() => moveExercise(dIdx, eIdx, 'down')} disabled={eIdx === day.exercises.length - 1} className={`p-1 rounded-lg border transition ${eIdx === day.exercises.length - 1 ? 'text-slate-200 border-slate-100 cursor-not-allowed' : 'text-slate-600 hover:bg-slate-100 border-slate-200'}`} title="انتقال به پایین">
+                                                                    <Icons.ArrowDown />
+                                                                </button>
+                                                                <button onClick={() => deleteExerciseFromDay(dIdx, eIdx)} className="p-1 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 hover:border-red-100 border border-transparent transition-all ml-auto md:ml-0 md:mt-2" title="حذف تمرین">
+                                                                    <Icons.Trash />
+                                                                </button>
+                                                            </div>
+
+                                                        </div>
+                                                    ))}
+                                                    {day.exercises && day.exercises.length === 0 && (
+                                                        <div className="text-center py-10 text-slate-400 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50">
+                                                            هنوز تمرینی به این روز اضافه نکرده‌اید. از بخش بانک تمرینات سمت چپ، حرکات را اضافه کنید.
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+
+                                        <button onClick={addNewDay} className="w-full py-4 border-2 border-dashed border-blue-200 rounded-3xl text-blue-600 font-black flex items-center justify-center gap-2 hover:bg-blue-50/40 hover:border-blue-300 transition duration-200">
+                                            <Icons.Plus /> افزودن روز تمرینی جدید
+                                        </button>
+                                    </div>
+
+                                    {/* بانک حرکات سریع در سایدبار برنامه‌نویسی */}
+                                    <div className="lg:col-span-4">
+                                        <div className="bg-slate-900 text-slate-100 p-5 rounded-3xl sticky top-4 h-[650px] flex flex-col border border-slate-800 shadow-xl">
+                                            <div className="mb-4">
+                                                <h3 className="font-bold text-base flex items-center gap-2">
+                                                    <Icons.Dumbbell /> بانک تمرینات سریع
+                                                </h3>
+                                                <p className="text-[10px] text-slate-400 mt-1">حرکت را جستجو کرده و به روزهای تمرینی اضافه کنید.</p>
+                                            </div>
+
+                                            {/* فیلتر عضلات در طراحی برنامه */}
+                                            <div className="mb-3">
+                                                <select className="w-full p-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs font-bold outline-none text-slate-200" value={selectedMuscleFilter} onChange={e => setSelectedMuscleFilter(e.target.value)}>
+                                                    <option value="همه">همه گروه‌های عضلانی</option>
+                                                    {MUSCLE_GROUPS.map(m => <option key={m} value={m}>{m}</option>)}
+                                                </select>
+                                            </div>
+
+                                            <div className="relative mb-4">
+                                                <span className="absolute right-3 top-3 text-slate-500"><Icons.Search /></span>
+                                                <input className="w-full pr-9 pl-4 py-2.5 bg-slate-800 border border-slate-700 rounded-xl text-xs outline-none text-slate-100 placeholder-slate-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500" placeholder="جستجوی نام حرکت..." value={exerciseSearchTerm} onChange={e => setExerciseSearchTerm(e.target.value)} />
+                                            </div>
+
+                                            {/* اسکرول‌بار لیست حرکات */}
+                                            <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+                                                {filteredExercises.map(ex => (
+                                                    <div key={ex.id} className="p-3 bg-slate-800/80 rounded-xl border border-slate-800 hover:border-slate-700 flex justify-between items-center group transition">
+                                                        <div className="min-w-0 flex-1">
+                                                            <span className="text-[9px] bg-blue-900/50 text-blue-300 px-1.5 py-0.5 rounded-md font-bold inline-block mb-1">{ex.muscle}</span>
+                                                            <h6 className="text-xs font-bold text-slate-200 truncate">{ex.name}</h6>
+                                                        </div>
+                                                        <div className="flex gap-1.5">
+                                                            {currentPlan.days && currentPlan.days.map((_, i) => (
+                                                                <button key={i} onClick={() => addExerciseToDay(ex, i)} className="p-1.5 bg-slate-700 hover:bg-blue-600 text-white rounded text-[10px] font-black transition" title={`اضافه به روز ${i + 1}`}>
+                                                                    روز {i + 1}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                                {filteredExercises.length === 0 && (
+                                                    <p className="text-center text-slate-500 text-xs py-8">تمرینی پیدا نشد.</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* لیست برنامه‌های تمرینی ذخیره شده */}
+                        {activeTab === 'plans' && !isCreatingPlan && (
+                            <div className="space-y-6">
+                                <div className="flex justify-between items-center bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                                    <div>
+                                        <h3 className="text-lg font-black text-slate-900">لیست برنامه‌های ورزشی صادرشده</h3>
+                                        <p className="text-xs text-slate-400 mt-1">برنامه‌های صادر شده را بازنشانی، ادیت یا به فرم چاپی ارسال کنید.</p>
+                                    </div>
+                                    <button onClick={startNewPlan} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 transition">
+                                        <Icons.Plus /> طراحی برنامه جدید
+                                    </button>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {workoutPlans.map(plan => {
+                                        const athlete = athletes.find(a => a.id === plan.athleteId);
+                                        return (
+                                            <div key={plan.id} className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-sm flex flex-col justify-between font-sans">
+                                                <div>
+                                                    <div className="flex justify-between items-start mb-3">
+                                                        <span className="bg-blue-50 text-blue-700 border border-blue-100 px-3 py-1 rounded-full text-xs font-black">طول دوره: {plan.durationWeeks} هفته</span>
+                                                        <button onClick={() => {
+                                                            setWorkoutPlans(workoutPlans.filter(p => p.id !== plan.id));
+                                                            showToast('برنامه با موفقیت حذف شد.', 'info');
+                                                        }} className="text-slate-300 hover:text-red-500 p-1 rounded transition" title="حذف این برنامه">
+                                                            <Icons.Trash />
+                                                        </button>
+                                                    </div>
+                                                    <h4 className="text-xl font-black text-slate-900 mb-1">{plan.title}</h4>
+                                                    <p className="text-slate-500 text-sm mb-4">نام ورزشکار: <span className="text-slate-800 font-bold">{athlete?.name || 'ورزشکار حذف شده'}</span></p>
+                                                </div>
+                                                <div className="flex gap-2 border-t pt-4 border-slate-100">
+                                                    <button onClick={() => setSelectedPlanForPrint(plan)} className="flex-1 bg-slate-900 hover:bg-black text-white py-3 rounded-2xl font-bold flex items-center justify-center gap-2 transition shadow-lg shadow-slate-900/10">
+                                                        <Icons.Printer /> پیش‌نمایش و دانلود PDF
+                                                    </button>
+                                                    <button onClick={() => {setCurrentPlan(plan); setIsCreatingPlan(true);}} className="p-3 bg-slate-100 hover:bg-slate-200 rounded-2xl text-slate-600 transition" title="ویرایش برنامه">
+                                                        <Icons.Edit />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                    {workoutPlans.length === 0 && (
+                                        <div className="col-span-full text-center py-16 bg-white rounded-3xl border border-slate-200 border-dashed text-slate-400">
+                                            هنوز برنامه‌ای صادر نشده است. دکمه "طراحی برنامه جدید" را بزنید.
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* 4. سررسید برنامه‌ها و نوتیفیکیشن تمدید */}
+                        {activeTab === 'renewals' && (
+                            <div className="space-y-6">
+                                <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                                    <h3 className="text-xl font-black text-slate-900 font-sans">رهگیری سررسید برنامه‌ها و لزوم تمدید</h3>
+                                    <p className="text-xs text-slate-500 mt-1">این سیستم ورزشکارانی که برنامه تمرینی فعلی آن‌ها به پایان رسیده یا کمتر از ۱۰ روز تا تاریخ اتمام باقی‌مانده است را به شما نشان می‌دهد.</p>
+                                </div>
+
+                                <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
+                                    <table className="w-full text-right border-collapse">
+                                        <thead>
+                                            <tr className="bg-slate-50 border-b border-slate-200 text-xs font-black text-slate-700">
+                                                <th className="p-4">نام ورزشکار</th>
+                                                <th className="p-4">آخرین برنامه ثبت شده</th>
+                                                <th className="p-4">تاریخ پایان تخمینی</th>
+                                                <th className="p-4 text-center">وضعیت باقیمانده</th>
+                                                <th className="p-4 text-center">اقدام سریع</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="text-sm divide-y divide-slate-100 font-sans">
+                                            {renewalAthletes.map(({ athlete, latestPlan, endDate, remainingDays }) => (
+                                                <tr key={athlete.id} className="hover:bg-slate-50/50">
+                                                    <td className="p-4 font-bold text-slate-900">{athlete.name}</td>
+                                                    <td className="p-4 text-slate-600 font-bold">{latestPlan.title} ({latestPlan.durationWeeks} هفته)</td>
+                                                    <td className="p-4 font-black text-slate-900">{endDate}</td>
+                                                    <td className="p-4 text-center">
+                                                        {remainingDays < 0 ? (
+                                                            <span className="px-2.5 py-1 bg-red-100 text-red-700 rounded-full text-xs font-black">
+                                                                منقضی شده ({Math.abs(remainingDays)} روز پیش)
+                                                            </span>
+                                                        ) : remainingDays === 0 ? (
+                                                            <span className="px-2.5 py-1 bg-amber-100 text-amber-800 rounded-full text-xs font-black animate-pulse">
+                                                                امروز به پایان می‌رسد
+                                                            </span>
+                                                        ) : (
+                                                            <span className="px-2.5 py-1 bg-amber-50 text-amber-700 rounded-full text-xs font-black border border-amber-200">
+                                                                {remainingDays} روز باقی‌مانده
+                                                            </span>
+                                                        )}
+                                                    </td>
+                                                    <td className="p-4 text-center">
+                                                        <button onClick={() => {
+                                                            setCurrentPlan({
+                                                                id: Date.now(),
+                                                                athleteId: athlete.id,
+                                                                title: `تمدید: ${latestPlan.title}`,
+                                                                coachName: latestPlan.coachName,
+                                                                startDate: new Date().toISOString().split('T')[0],
+                                                                jalaliStartDate: JalaliDateHelper.getTodayJalali(),
+                                                                durationWeeks: 4,
+                                                                days: [{ id: Date.now(), dayTitle: 'روز اول تمرینی', exercises: [] }]
+                                                            });
+                                                            setIsCreatingPlan(true);
+                                                            setActiveTab('plans');
+                                                        }} className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-black px-4 py-2 rounded-xl transition">
+                                                            نوشتن برنامه جدید
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                            {renewalAthletes.length === 0 && (
+                                                <tr>
+                                                    <td colSpan="5" className="p-8 text-center text-slate-400 font-bold">
+                                                        هیچ ورزشکاری در حال حاضر در بازه سررسید تمدید نیست (برنامه‌ها به روز هستند).
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* 5. پشتیبان‌گیری و داده‌ها */}
+                        {activeTab === 'backup' && (
+                            <div className="space-y-6 font-sans">
+                                <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                                    <h3 className="text-xl font-black text-slate-900">پشتیبان‌گیری، بازیابی و انتقال داده‌ها</h3>
+                                    <p className="text-xs text-slate-500 mt-1">با مدیریت فایل‌های پشتیبان، هرگز اطلاعات ورزشکاران و برنامه‌ها را در صورت پاک شدن حافظه مرورگر از دست ندهید.</p>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {/* پشتیبان‌گیری کامل */}
+                                    <div className="bg-white p-6 rounded-3xl border border-slate-200 flex flex-col justify-between">
+                                        <div>
+                                            <h4 className="font-bold text-base text-slate-900 flex items-center gap-2">
+                                                📥 دریافت نسخه پشتیبان کامل (JSON)
+                                            </h4>
+                                            <p className="text-xs text-slate-400 mt-2 leading-relaxed font-bold">این گزینه فایلی با پسوند .json شامل کلیه ورزشکاران، بانک تمرینات، برنامه‌های ورزشی و تنظیمات را برای شما تولید کرده و در سیستم ذخیره می‌کند.</p>
+                                        </div>
+                                        <button onClick={exportBackup} className="mt-6 bg-slate-900 hover:bg-black text-white py-3 rounded-2xl font-bold flex items-center justify-center gap-2 transition">
+                                            دانلود فایل پشتیبان داده‌ها
+                                        </button>
+                                    </div>
+
+                                    {/* بارگذاری پشتیبان */}
+                                    <div className="bg-white p-6 rounded-3xl border border-slate-200 flex flex-col justify-between">
+                                        <div>
+                                            <h4 className="font-bold text-base text-slate-900 flex items-center gap-2">
+                                                📤 بازیابی داده‌های سیستم
+                                            </h4>
+                                            <p className="text-xs text-slate-400 mt-2 leading-relaxed font-bold">اگر حافظه مرورگر را پاک کرده‌اید یا می‌خواهید روی سیستم دیگر کار کنید، فایل پشتیبان قبلی را از این بخش بارگذاری کنید.</p>
+                                        </div>
+                                        <div className="mt-6">
+                                            <label className="block bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold py-3 px-4 rounded-2xl text-center cursor-pointer border border-blue-200 border-dashed text-sm transition font-sans">
+                                                بارگذاری فایل پشتیبان (JSON)
+                                                <input type="file" accept=".json" className="hidden" onChange={handleImportBackup} />
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    {/* خروجی اکسل */}
+                                    <div className="bg-white p-6 rounded-3xl border border-slate-200 flex flex-col justify-between col-span-full">
+                                        <div>
+                                            <h4 className="font-bold text-base text-slate-900">📊 گزارش‌گیری اکسل (فرم استاندارد CSV)</h4>
+                                            <p className="text-xs text-slate-400 mt-1 leading-relaxed font-bold">دریافت مستقیم لیست کامل پرونده ورزشکاران فعال به همراه مشخصات فیزیکی، اهداف و تعداد دوره‌ها جهت استفاده در اکسل.</p>
+                                        </div>
+                                        <button onClick={exportAthletesToCSV} className="mt-4 bg-emerald-600 hover:bg-emerald-700 text-white py-3 px-6 rounded-2xl font-bold transition flex items-center justify-center gap-2 w-fit">
+                                            دریافت خروجی اکسل ورزشکاران (CSV)
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* 6. بانک حرکات بدنسازی */}
+                        {activeTab === 'bank' && (
+                            <div className="space-y-6">
+                                <div className="bg-white p-6 rounded-3xl border border-slate-200">
+                                    <h3 className="font-black mb-4 flex items-center gap-2 text-slate-900"><Icons.Dumbbell /> افزودن حرکت ورزشی جدید به بانک اطلاعاتی</h3>
+                                    <form onSubmit={e => {
+                                        e.preventDefault();
+                                        const form = e.target;
+                                        if (!form.exName.value.trim()) return;
+                                        const ex = { id: Date.now(), name: form.exName.value, muscle: form.muscle.value, equipment: form.equip.value || 'وزنه آزاد' };
+                                        setExercises([...exercises, ex]);
+                                        form.reset();
+                                        showToast(`حرکت "${ex.name}" به بانک تمرینات اضافه شد.`);
+                                    }} className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                        <input name="exName" required className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white font-bold" placeholder="نام دقیق حرکت بدنسازی *" />
+                                        <select name="muscle" className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white font-bold">
+                                            {MUSCLE_GROUPS.map(m => <option key={m} value={m}>{m}</option>)}
+                                        </select>
+                                        <input name="equip" className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white font-bold" placeholder="تجهیزات جانبی (هالتر، دمبل...)" />
+                                        <button type="submit" className="bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition flex items-center justify-center gap-1">
+                                            <Icons.Plus /> ثبت در بانک حرکات
+                                        </button>
+                                    </form>
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    {exercises.map(ex => (
+                                        <div key={ex.id} className="bg-white p-4 rounded-2xl border border-slate-200 flex justify-between items-center shadow-sm">
+                                            <div>
+                                                <span className="text-[10px] bg-slate-100 text-slate-600 border border-slate-200 px-2 py-0.5 rounded font-black inline-block mb-1">{ex.muscle}</span>
+                                                <h5 className="font-bold text-sm text-slate-900">{ex.name}</h5>
+                                                <span className="text-[10px] text-slate-400 mt-1 block">تجهیزات: {ex.equipment || 'وزنه آزاد'}</span>
+                                            </div>
+                                            <button onClick={() => {
+                                                setExercises(exercises.filter(x => x.id !== ex.id));
+                                                showToast('حرکت با موفقیت از بانک تمرینات حذف شد.', 'info');
+                                            }} className="text-slate-300 hover:text-red-500 p-2 transition-colors">
+                                                <Icons.Trash />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* 7. تنظیمات سیستم */}
+                        {activeTab === 'settings' && (
+                            <div className="max-w-2xl bg-white p-8 rounded-3xl border border-slate-200 space-y-8 shadow-sm">
+                                <section>
+                                    <h3 className="text-lg font-black mb-4 flex items-center gap-2 text-slate-900">🏢 اطلاعات و مشخصات باشگاه</h3>
+                                    <div className="space-y-4">
+                                        <input className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:ring-2 focus:ring-blue-500 outline-none focus:bg-white" value={settings.clubName} onChange={e => setSettings({...settings, clubName: e.target.value})} placeholder="نام باشگاه یا مجموعه ورزشی شما" />
+                                        
+                                        {/* آپلود لوگو در پروفایل */}
+                                        <div className="border border-slate-100 rounded-2xl p-4 bg-slate-50/50">
+                                            <label className="text-xs font-bold text-slate-500 block mb-2">لوگوی اختصاصی باشگاه (فایل تصویر یا لوگو):</label>
+                                            <div className="flex items-center gap-4">
+                                                {settings.logo ? (
+                                                    <div className="relative">
+                                                        <img src={settings.logo} className="w-16 h-16 object-cover rounded-xl border border-slate-200" alt="لوگو" />
+                                                        <button onClick={clearLogo} className="absolute -top-2 -left-2 bg-red-500 text-white rounded-full p-1" title="حذف">
+                                                            <Icons.Trash />
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <div className="w-16 h-16 rounded-xl border-2 border-dashed border-slate-300 flex items-center justify-center text-slate-400 font-bold text-xs bg-slate-100">
+                                                        بدون لوگو
+                                                    </div>
+                                                )}
+                                                <div className="flex-1">
+                                                    <input type="file" accept="image/*" onChange={handleLogoUpload} className="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+                                                    <p className="text-[10px] text-slate-400 mt-1.5">لوگو در بالای برگه‌های چاپی برنامه مربیان درج خواهد شد. در صورت خالی بودن، لوگوی پیش‌فرض اعمال می‌شود.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </section>
+                                
+                                <section className="border-t pt-6 border-slate-100">
+                                    <h3 className="text-lg font-black mb-4 flex items-center gap-2 text-slate-900">👥 کادر مربیان فعال</h3>
+                                    <div className="flex gap-2 mb-4">
+                                        <input className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none font-bold" placeholder="نام مربی جدید..." value={newCoachName} onChange={e => setNewCoachName(e.target.value)} />
+                                        <button onClick={() => { 
+                                            if(newCoachName.trim()) { 
+                                                setSettings({...settings, coaches: [...settings.coaches, newCoachName.trim()]}); 
+                                                setNewCoachName(''); 
+                                                showToast('مربی جدید به کادر اضافه شد.');
+                                            } 
+                                        }} className="bg-slate-900 hover:bg-black text-white px-6 rounded-xl font-bold flex items-center justify-center">
+                                            <Icons.Plus />
+                                        </button>
+                                    </div>
+                                    <div className="space-y-2">
+                                        {settings.coaches && settings.coaches.map((c, i) => (
+                                            <div key={i} className="flex justify-between items-center p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                                                <span className="text-sm font-bold text-slate-800">{c}</span>
+                                                <button onClick={() => {
+                                                    setSettings({...settings, coaches: settings.coaches.filter((_, idx) => idx !== i)});
+                                                    showToast('مربی حذف گردید.', 'info');
+                                                }} className="text-red-400 hover:text-red-600 p-1">
+                                                    <Icons.Trash />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </section>
+                            </div>
+                        )}
+                    </main>
+
+                    {/* پیش‌نمایش مُدال خروجی چاپی مربیان */}
+                    {selectedPlanForPrint && (
+                        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[200] overflow-y-auto p-4 flex justify-center no-print">
+                            <div className="bg-white w-full max-w-5xl rounded-[2.5rem] p-6 md:p-10 shadow-2xl space-y-8 my-10 border border-slate-200">
+                                <div className="flex flex-col md:flex-row justify-between items-center border-b border-slate-200 pb-6 gap-4">
+                                    <div className="flex items-center gap-4">
+                                        <div className="p-3 bg-blue-600 text-white rounded-2xl shadow-lg"><Icons.Printer /></div>
+                                        <div>
+                                            <h3 className="text-xl font-black text-slate-900 font-sans">پیش‌نمایش نهایی نسخه چاپی ورزشکار</h3>
+                                            <p className="text-slate-500 text-xs">طراحی سازگار و بهینه‌سازی شده جهت خروجی کاغذ A4 یا PDF استاندارد.</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2.5 flex-wrap">
+                                        {/* دکمه دانلود مستقیم PDF اختصاصی به عنوان درخواست اصلی مربی */}
+                                        <button onClick={() => generatePDF(selectedPlanForPrint)} className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-2xl font-black flex items-center gap-2 shadow-lg shadow-emerald-500/20 transition-all">
+                                            <Icons.Save /> دانلود مستقیم فایل PDF
+                                        </button>
+                                        {/* چاپ فیزیکی فیدبک دار */}
+                                        <button onClick={() => window.print()} className="bg-slate-800 hover:bg-slate-900 text-white px-5 py-3 rounded-2xl font-black flex items-center gap-2 shadow-md transition-all">
+                                            <Icons.Printer /> چاپ روی کاغذ (A4)
+                                        </button>
+                                        <button onClick={() => setSelectedPlanForPrint(null)} className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-6 py-3 rounded-2xl font-bold">بستن</button>
+                                    </div>
+                                </div>
+
+                                {/* کادر محتوای واقعی قابل چاپ */}
+                                <div className="bg-slate-50 p-4 md:p-8 rounded-3xl border border-slate-200/60 overflow-x-auto">
+                                    <div className="min-w-[800px] p-2">
+                                        {/* ایجاد یک نگهدارنده با پس زمینه تمیز برای خروجی عالی pdf */}
+                                        <div id="print-target-area" className="bg-white p-6 rounded-2xl">
+                                            <PrintableLayout plan={selectedPlanForPrint} athletes={athletes} settings={settings} calculateEndDate={calculateEndDate} />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* کامپوننت مخصوص فقط چاپ (بدون کلاس hidden تداخلی Tailwind) */}
+                    <div className="print-only">
+                        {selectedPlanForPrint && <PrintableLayout plan={selectedPlanForPrint} athletes={athletes} settings={settings} calculateEndDate={calculateEndDate} />}
+                    </div>
+
+                    {/* منوی ناوبری نسخه موبایل */}
+                    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-3 flex justify-around md:hidden z-50 no-print shadow-2xl">
+                        <button onClick={() => setActiveTab('dashboard')} className={`p-3 rounded-xl transition ${activeTab === 'dashboard' ? 'bg-blue-50 text-blue-600' : 'text-slate-400'}`} title="داشبورد">
+                            <Icons.Dashboard />
+                        </button>
+                        <button onClick={() => setActiveTab('athletes')} className={`p-3 rounded-xl transition ${activeTab === 'athletes' ? 'bg-blue-50 text-blue-600' : 'text-slate-400'}`} title="هنرجویان">
+                            <Icons.Users />
+                        </button>
+                        <button onClick={() => setActiveTab('plans')} className={`p-3 rounded-xl transition ${activeTab === 'plans' ? 'bg-blue-50 text-blue-600' : 'text-slate-400'}`} title="برنامه‌ها">
+                            <Icons.Clipboard />
+                        </button>
+                        <button onClick={() => setActiveTab('renewals')} className={`p-3 rounded-xl transition ${activeTab === 'renewals' ? 'bg-blue-50 text-blue-600' : 'text-slate-400'}`} title="تمدیدها">
+                            <Icons.Alert />
+                        </button>
+                        <button onClick={() => setActiveTab('bank')} className={`p-3 rounded-xl transition ${activeTab === 'bank' ? 'bg-blue-50 text-blue-600' : 'text-slate-400'}`} title="بانک تمرین">
+                            <Icons.Dumbbell />
+                        </button>
+                    </nav>
+
+                </div>
+            );
+        };
+
+        // کامپوننت تخصصی ساختار چاپی (مشترک پیش‌نمایش و دستور پرینت سیستم‌عامل)
+        const PrintableLayout = ({ plan, athletes, settings, calculateEndDate }) => {
+            const athlete = athletes.find(a => a.id === plan.athleteId);
+            
+            // محاسبه تاریخ شمسی شروع و پایان به طور مستقل
+            const startG = plan && plan.startDate ? new Date(plan.startDate) : new Date();
+            const startYear = isNaN(startG.getFullYear()) ? new Date().getFullYear() : startG.getFullYear();
+            const startMonth = isNaN(startG.getMonth()) ? new Date().getMonth() + 1 : startG.getMonth() + 1;
+            const startDay = isNaN(startG.getDate()) ? new Date().getDate() : startG.getDate();
+            const startJalali = JalaliDateHelper.gregorianToJalali(startYear, startMonth, startDay);
+
+            const weeks = plan && plan.durationWeeks ? parseInt(plan.durationWeeks) : 4;
+            const endG = new Date(startG.getTime() + (weeks * 7 * 24 * 60 * 60 * 1000));
+            const endYear = isNaN(endG.getFullYear()) ? new Date().getFullYear() : endG.getFullYear();
+            const endMonth = isNaN(endG.getMonth()) ? new Date().getMonth() + 1 : endG.getMonth() + 1;
+            const endDay = isNaN(endG.getDate()) ? new Date().getDate() : endG.getDate();
+            const endJalali = JalaliDateHelper.gregorianToJalali(endYear, endMonth, endDay);
+
+            return (
+                <div className="bg-white text-right leading-relaxed p-4 text-slate-900 border border-slate-200 rounded-xl max-w-full" dir="rtl">
+                    
+                    {/* هدر چاپی فشرده */}
+                    <div className="flex justify-between items-center border-b-2 border-slate-900 pb-3 mb-4">
+                        <div className="flex items-center gap-3">
+                            {settings.logo ? (
+                                <img src={settings.logo} className="w-12 h-12 rounded-xl object-cover border border-slate-200 shadow-sm" alt="لوگوی باشگاه" />
+                            ) : (
+                                <div className="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center font-black text-xl shadow-sm">
+                                    🏋️
+                                </div>
+                            )}
+                            <div>
+                                <h1 className="text-lg font-black text-slate-900 leading-tight">{settings.clubName}</h1>
+                                <p className="text-[9px] text-slate-500 font-bold leading-none mt-1">سامانه اتوماتیک صدور برنامه‌های ورزشی مربیان فیتنس</p>
+                            </div>
+                        </div>
+                        <div className="text-left">
+                            <h2 className="text-sm font-black text-blue-600 leading-tight mb-0.5">{plan.title}</h2>
+                            <span className="bg-slate-100 text-slate-800 px-2 py-0.5 rounded font-black text-[9px] border border-slate-200 inline-block">نسخه فیزیکی ورزشکار</span>
+                        </div>
+                    </div>
+
+                    {/* اطلاعات پایه ورزشکار در برنامه چاپی - بدون تداخل RTL/LTR */}
+                    <div className="grid grid-cols-4 gap-3 mb-4 bg-slate-50 p-3 rounded-xl border border-slate-200 text-[11px]">
+                        <div className="space-y-0.5">
+                            <span className="text-[9px] text-slate-400 font-bold block">نام ورزشکار:</span>
+                            <p className="font-black text-slate-900">{athlete?.name || 'ورزشکار گرامی'}</p>
+                        </div>
+                        <div className="space-y-0.5">
+                            <span className="text-[9px] text-slate-400 font-bold block">قد و وزن / هدف:</span>
+                            <p className="font-black text-blue-700">
+                                قد {athlete?.height || '-'} سانتی‌متر / وزن {athlete?.weight || '-'} کیلوگرم / {athlete?.goal || '-'}
+                            </p>
+                        </div>
+                        <div className="space-y-0.5">
+                            <span className="text-[9px] text-slate-400 font-bold block">دوره تمرینی (شمسی):</span>
+                            <p className="font-black text-slate-900">شروع: {startJalali} / پایان: {endJalali}</p>
+                        </div>
+                        <div className="space-y-0.5 text-left">
+                            <span className="text-[9px] text-slate-400 font-bold block">مربی صادرکننده:</span>
+                            <p className="font-black text-slate-950">{plan.coachName}</p>
+                        </div>
+                    </div>
+
+                    {/* رندر روزهای تمرینی با استایل فشرده */}
+                    <div className="space-y-4">
+                        {plan.days && plan.days.map((day, idx) => (
+                            <div key={idx} className="border border-slate-200 rounded-lg overflow-hidden shadow-sm">
+                                <h3 className="bg-slate-900 text-white px-3 py-1.5 font-black text-xs leading-none">
+                                    {day.dayTitle}
+                                </h3>
+                                <table className="w-full text-[10px] text-right">
+                                    <thead>
+                                        <tr className="bg-slate-100 text-slate-900 border-b border-slate-200 font-bold">
+                                            <th className="p-2 border-r border-slate-200 text-center w-10">ردیف</th>
+                                            <th className="p-2 border-r border-slate-200">نام حرکت</th>
+                                            <th className="p-2 border-r border-slate-200 text-center w-24">ست × تکرار</th>
+                                            <th className="p-2 border-r border-slate-200 text-center w-24">عضله هدف</th>
+                                            <th className="p-2 border-r border-slate-200 w-24">تجهیزات</th>
+                                            <th className="p-2">نکات و توصیه‌های مربی</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {day.exercises && day.exercises.map((ex, exIdx) => {
+                                            const isSuperset = ex.isSuperset === 'next';
+                                            const isSupersetPrev = exIdx > 0 && day.exercises[exIdx - 1].isSuperset === 'next';
+                                            
+                                            return (
+                                                <tr key={exIdx} className={`border-b border-slate-200 transition ${isSuperset || isSupersetPrev ? 'bg-blue-50/40' : 'bg-white'}`}>
+                                                    <td className="p-2 border-r border-slate-200 text-center font-black text-slate-400 relative">
+                                                        {/* خط ارتباطی عمودی سوپرست */}
+                                                        {isSuperset && (
+                                                            <div className="absolute right-0.5 top-1/2 bottom-0 w-0.5 bg-blue-500 rounded-full" style={{ zIndex: 10 }}></div>
+                                                        )}
+                                                        {isSupersetPrev && (
+                                                            <div className="absolute right-0.5 top-0 bottom-1/2 w-0.5 bg-blue-500 rounded-full" style={{ zIndex: 10 }}></div>
+                                                        )}
+                                                        {isSuperset ? '🔗 سوپر' : isSupersetPrev ? '🔗 سوپر' : exIdx + 1}
+                                                    </td>
+                                                    <td className="p-2 border-r border-slate-200">
+                                                        <div className="flex items-center gap-1">
+                                                            {(isSuperset || isSupersetPrev) && <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></span>}
+                                                            <span className="font-bold text-slate-900 text-[10.5px]">{ex.name}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-2 border-r border-slate-200 text-center font-black text-slate-900 bg-slate-50/35">
+                                                        {ex.sets} × {ex.reps}
+                                                    </td>
+                                                    <td className="p-2 border-r border-slate-200 text-center">
+                                                        <span className="px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded font-bold text-[9px] border border-slate-200">
+                                                            {ex.muscle}
+                                                        </span>
+                                                    </td>
+                                                    <td className="p-2 border-r border-slate-200 text-slate-500 font-bold">{ex.equipment || 'وزنه آزاد'}</td>
+                                                    <td className="p-2 italic text-slate-600 font-medium">{ex.coachNote || 'مطابق با زاویه استاندارد مربی تکرار شود.'}</td>
+                                                </tr>
+                                            );
+                                        })}
+                                        {day.exercises && day.exercises.length === 0 && (
+                                            <tr>
+                                                <td colSpan="6" className="p-4 text-center text-slate-400 font-bold">تمرینی برای این روز اضافه نشده است.</td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* پاورقی نکات ریکاوری و تایید مربی فشرده */}
+                    <div className="mt-4 pt-3 border-t border-slate-200 flex justify-between items-end text-[10px]">
+                        <div className="max-w-xl">
+                            <h5 className="font-black text-slate-800 mb-0.5 flex items-center gap-1">✨ توصیه‌های ریکاوری و تغذیه مربی:</h5>
+                            <p className="text-slate-500 font-bold leading-normal">
+                                استراحت ۶۰ الی ۹۰ ثانیه بین ست‌ها و مصرف آب حین تمرین برای ریکاوری الزامی است. حتماً پس از اتمام تمرین ۱۰ دقیقه حرکات کششی انجام دهید. این برنامه به مدت {plan.durationWeeks} هفته اعتبار دارد.
+                            </p>
+                        </div>
+                        <div className="text-center shrink-0">
+                            <div className="w-24 h-10 border border-dashed border-slate-300 rounded-lg flex items-center justify-center mb-0.5 bg-slate-50/50">
+                                <span className="text-[8px] font-black text-slate-400 rotate-12">مهر و امضاء مربی</span>
+                            </div>
+                            <p className="text-[10px] font-black text-slate-900 leading-none mt-1">{plan.coachName}</p>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        /* کامپوننت دکمه‌های ناوبری جانبی مربی */
+        const NavItem = ({ active, onClick, icon, label, badge }) => (
+            <button onClick={onClick} className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 ${active ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'}`}>
+                <div className="flex items-center gap-3.5">
+                    {icon} <span className="text-sm font-bold">{label}</span>
+                </div>
+                {badge > 0 ? (
+                    <span className="bg-amber-500 text-slate-900 text-[10px] font-black px-2 py-0.5 rounded-full font-sans">
+                        {badge}
+                    </span>
+                ) : null}
+            </button>
+        );
+
+        /* کامپوننت کارت‌های گزارش وضعیت داشبورد */
+        const StatCard = ({ title, value, icon, color }) => (
+            <div className="bg-white p-6 rounded-3xl border border-slate-200/80 flex justify-between items-center shadow-sm">
+                <div>
+                    <p className="text-slate-400 text-xs font-bold mb-1.5">{title}</p>
+                    <p className="text-3xl font-black text-slate-900">{value}</p>
+                </div>
+                <div className={`p-4 rounded-2xl ${color}`}>{icon}</div>
+            </div>
+        );
+
+        // اجرای رندر اپلیکیشن به صورت ایمن همراه با ErrorBoundary در ریشه
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(
+            <ErrorBoundary>
+                <App />
+            </ErrorBoundary>
+        );
+    </script>
+</body>
+</html>

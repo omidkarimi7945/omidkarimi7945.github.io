@@ -1,0 +1,578 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>واترمارک گروهی روی عکس | رایان طرح</title>
+
+  <!-- Vazirmatn -->
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vazirmatn@33.0.3/misc/ui/vazirmatn-ui.css">
+
+  <!-- JSZip (برای دانلود گروهی ZIP) -->
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+
+  <style>
+    :root{
+      --bg:#0b0f17;
+      --card:#121a2a;
+      --muted:#9aa7bf;
+      --text:#e9eefb;
+      --stroke:#24324f;
+      --accent:#4cc9f0;
+      --ok:#22c55e;
+      --warn:#f59e0b;
+      --err:#ef4444;
+      --radius:16px;
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: Vazirmatn UI, Vazirmatn, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: radial-gradient(1200px 800px at 70% 20%, #162243 0%, var(--bg) 55%) no-repeat;
+      color:var(--text);
+      min-height:100vh;
+    }
+    .wrap{ max-width:1200px; margin:0 auto; padding:28px 18px 60px; }
+    .topbar{ display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:18px; }
+    .brand{ display:flex; align-items:center; gap:12px; }
+    .logo{
+      width:42px; height:42px; border-radius:12px;
+      background: linear-gradient(135deg, #ffd166, #06d6a0, #118ab2);
+      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+      border:1px solid rgba(255,255,255,.12);
+    }
+    .title h1{ margin:0; font-size:18px; font-weight:900; letter-spacing:-.2px; }
+    .title p{ margin:4px 0 0; color:var(--muted); font-size:12px; }
+
+    .grid{ display:grid; grid-template-columns: 1.05fr .95fr; gap:16px; }
+    @media (max-width: 980px){ .grid{ grid-template-columns:1fr; } }
+
+    .card{
+      background: rgba(18,26,42,.86);
+      border:1px solid rgba(36,50,79,.8);
+      border-radius: var(--radius);
+      padding:18px;
+      box-shadow: 0 16px 40px rgba(0,0,0,.35);
+      backdrop-filter: blur(6px);
+    }
+    .card h2{ margin:0 0 10px; font-size:15px; font-weight:900; }
+    .hint{ color:var(--muted); font-size:12px; margin:0 0 14px; line-height:1.8; }
+
+    .uploader{
+      border:1px dashed rgba(154,167,191,.35);
+      border-radius: var(--radius);
+      padding:14px;
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      background: rgba(11,15,23,.35);
+    }
+    .uploader input{ width:100%; }
+
+    .btn{
+      border:1px solid rgba(255,255,255,.12);
+      background: linear-gradient(135deg, rgba(76,201,240,.22), rgba(34,197,94,.18));
+      color:var(--text);
+      padding:10px 12px;
+      border-radius: 12px;
+      font-weight:900;
+      cursor:pointer;
+      transition: transform .12s ease, opacity .12s ease;
+      user-select:none;
+      white-space:nowrap;
+    }
+    .btn:active{ transform: scale(.98); opacity:.9; }
+    .btn.ghost{ background: rgba(11,15,23,.35); }
+    .btn.danger{ background: rgba(239,68,68,.14); }
+    .btn.small{ padding:8px 10px; font-size:12px; border-radius: 11px; }
+
+    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:12px; }
+    .select, .input{
+      background: rgba(11,15,23,.4);
+      border:1px solid rgba(255,255,255,.12);
+      color: var(--text);
+      padding:10px 12px;
+      border-radius: 12px;
+      font-weight:900;
+      outline:none;
+      min-width: 150px;
+    }
+    .input{ min-width: 220px; }
+    .sliderWrap{
+      display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+      padding:10px 12px; border-radius: 12px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.16);
+    }
+    input[type="range"]{ width: 180px; }
+
+    .toolbar{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-top:12px;
+      padding-top:12px;
+      border-top:1px solid rgba(255,255,255,.08);
+    }
+
+    .list{ display:grid; gap:10px; margin-top:12px; }
+    .item{
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.16);
+      border-radius: 14px;
+      padding:12px;
+      display:flex;
+      gap:12px;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:wrap;
+    }
+    .meta{ color:var(--muted); font-size:11px; }
+    .name{ font-weight:900; }
+    .pill{
+      font-size:11px; padding:6px 9px; border-radius:999px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.18);
+      font-weight:900;
+      white-space:nowrap;
+    }
+
+    .toast{
+      position: fixed;
+      bottom: 18px;
+      left: 18px;
+      background: rgba(18,26,42,.92);
+      border:1px solid rgba(255,255,255,.14);
+      padding:10px 12px;
+      border-radius: 14px;
+      color: var(--text);
+      font-weight:900;
+      box-shadow: 0 16px 40px rgba(0,0,0,.35);
+      transform: translateY(12px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .18s ease, transform .18s ease;
+      max-width: min(92vw, 520px);
+      font-size:12px;
+      line-height:1.6;
+    }
+    .toast.show{ opacity:1; transform: translateY(0); }
+
+    .previewWM{
+      display:flex; gap:10px; align-items:center; flex-wrap:wrap;
+      padding:12px;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.16);
+      margin-top:12px;
+    }
+    .wmThumb{
+      width:74px; height:74px;
+      border-radius: 12px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.05);
+      display:grid;
+      place-items:center;
+      overflow:hidden;
+    }
+    .wmThumb img{ width:100%; height:100%; object-fit:contain; display:none; }
+    .wmThumb span{ color:var(--muted); font-size:11px; font-weight:900; padding:8px; text-align:center; }
+    canvas{ display:none; }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div class="title">
+          <h1>واترمارک گروهی روی عکس</h1>
+          <p>آپلود چند عکس + آپلود واترمارک جداگانه + انتخاب گوشه/مرکز/کاشی + دانلود تکی یا ZIP</p>
+        </div>
+      </div>
+      <a class="btn" href="https://rayantarh.com" target="_blank" rel="noreferrer">rayantarh.com</a>
+    </div>
+
+    <div class="grid">
+      <!-- LEFT -->
+      <section class="card">
+        <h2>۱) ورودی‌ها</h2>
+        <p class="hint">
+          عکس‌ها را گروهی انتخاب کن. واترمارک را هم جداگانه بده (PNG با پس‌زمینه شفاف بهتره).
+          همه پردازش‌ها داخل مرورگر انجام می‌شود.
+        </p>
+
+        <div class="uploader" style="margin-bottom:10px;">
+          <input id="photos" type="file" accept="image/*" multiple />
+          <span class="pill">عکس‌ها</span>
+        </div>
+
+        <div class="uploader">
+          <input id="watermark" type="file" accept="image/*" />
+          <span class="pill">واترمارک</span>
+        </div>
+
+        <div class="previewWM">
+          <div class="wmThumb" id="wmThumb">
+            <img id="wmImg" alt="watermark preview" />
+            <span id="wmEmpty">پیش‌نمایش<br/>واترمارک</span>
+          </div>
+          <div>
+            <div class="name" id="wmName">واترمارک انتخاب نشده</div>
+            <div class="meta" id="wmMeta">—</div>
+          </div>
+        </div>
+
+        <div class="row">
+          <label class="hint" style="margin:0;">جایگذاری:</label>
+          <select id="position" class="select">
+            <option value="tr" selected>بالا راست</option>
+            <option value="tl">بالا چپ</option>
+            <option value="br">پایین راست</option>
+            <option value="bl">پایین چپ</option>
+            <option value="center">وسط</option>
+            <option value="tile">کاشی (تکرار)</option>
+          </select>
+
+          <label class="hint" style="margin:0;">فرمت خروجی:</label>
+          <select id="format" class="select">
+            <option value="image/jpeg" selected>JPG</option>
+            <option value="image/png">PNG</option>
+            <option value="image/webp">WEBP</option>
+          </select>
+
+          <label class="hint" style="margin:0;">کیفیت JPG/WEBP:</label>
+          <select id="quality" class="select">
+            <option value="0.92" selected>92%</option>
+            <option value="0.85">85%</option>
+            <option value="0.75">75%</option>
+          </select>
+        </div>
+
+        <div class="row">
+          <div class="sliderWrap">
+            <span class="pill">شفافیت</span>
+            <input id="opacity" type="range" min="0" max="100" value="35" />
+            <span class="meta" id="opacityVal">35%</span>
+          </div>
+
+          <div class="sliderWrap">
+            <span class="pill">اندازه واترمارک</span>
+            <input id="scale" type="range" min="5" max="60" value="18" />
+            <span class="meta" id="scaleVal">18% از عرض</span>
+          </div>
+
+          <div class="sliderWrap">
+            <span class="pill">حاشیه</span>
+            <input id="margin" type="range" min="0" max="80" value="24" />
+            <span class="meta" id="marginVal">24px</span>
+          </div>
+        </div>
+
+        <div class="toolbar">
+          <button id="processBtn" class="btn">اعمال واترمارک</button>
+          <button id="downloadZipBtn" class="btn small">دانلود همه (ZIP)</button>
+          <button id="resetBtn" class="btn danger">ریست</button>
+        </div>
+
+        <p class="hint" style="margin-top:12px;">
+          نکته: اگر واترمارک خیلی بزرگ/کوچیک شد، اسلایدر «اندازه» رو تنظیم کن. برای واترمارک‌های ضد کپی،
+          حالت «کاشی» رو انتخاب کن.
+        </p>
+      </section>
+
+      <!-- RIGHT -->
+      <section class="card">
+        <h2>۲) خروجی‌ها</h2>
+        <p class="hint">بعد از پردازش، برای هر عکس یک لینک دانلود می‌بینی. اگر ZIP می‌خوای، دکمه «دانلود همه» رو بزن.</p>
+
+        <div id="outList" class="list"></div>
+      </section>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <canvas id="cv"></canvas>
+
+  <script>
+    // ---------- helpers ----------
+    const $ = (id) => document.getElementById(id);
+    const clamp = (v,min,max) => Math.max(min, Math.min(max, v));
+
+    function toast(msg, type="ok"){
+      const el = $("toast");
+      el.textContent = msg;
+      el.style.borderColor = type==="ok" ? "rgba(34,197,94,.55)" :
+                            type==="warn" ? "rgba(245,158,11,.55)" :
+                                            "rgba(239,68,68,.55)";
+      el.classList.add("show");
+      clearTimeout(toast._t);
+      toast._t = setTimeout(() => el.classList.remove("show"), 1700);
+    }
+
+    function readFileAsImage(file){
+      return new Promise((resolve, reject) => {
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = () => resolve({ img, url });
+        img.onerror = reject;
+        img.src = url;
+      });
+    }
+
+    function safeBaseName(filename){
+      const dot = filename.lastIndexOf(".");
+      return dot > 0 ? filename.slice(0, dot) : filename;
+    }
+
+    function mimeToExt(mime){
+      if(mime === "image/png") return "png";
+      if(mime === "image/webp") return "webp";
+      return "jpg";
+    }
+
+    // ---------- watermark draw ----------
+    function drawWatermark(ctx, baseW, baseH, wmImg, opts){
+      const opacity = clamp(opts.opacity, 0, 1);
+      const scalePct = clamp(opts.scalePct, 0.05, 0.8);   // of base width
+      const margin = clamp(opts.margin, 0, 200);
+      const pos = opts.position;
+
+      // size watermark
+      const targetW = Math.max(20, Math.round(baseW * scalePct));
+      const ratio = wmImg.width / wmImg.height;
+      const targetH = Math.max(20, Math.round(targetW / ratio));
+
+      ctx.save();
+      ctx.globalAlpha = opacity;
+
+      if(pos === "tile"){
+        // tile across canvas
+        const stepX = targetW + margin;
+        const stepY = targetH + margin;
+        const startX = -Math.floor(stepX/2);
+        const startY = -Math.floor(stepY/2);
+
+        for(let y = startY; y < baseH + stepY; y += stepY){
+          for(let x = startX; x < baseW + stepX; x += stepX){
+            ctx.drawImage(wmImg, x, y, targetW, targetH);
+          }
+        }
+        ctx.restore();
+        return;
+      }
+
+      let x = margin, y = margin;
+
+      if(pos === "tr"){ x = baseW - targetW - margin; y = margin; }
+      if(pos === "tl"){ x = margin; y = margin; }
+      if(pos === "br"){ x = baseW - targetW - margin; y = baseH - targetH - margin; }
+      if(pos === "bl"){ x = margin; y = baseH - targetH - margin; }
+      if(pos === "center"){ x = Math.round((baseW - targetW)/2); y = Math.round((baseH - targetH)/2); }
+
+      ctx.drawImage(wmImg, x, y, targetW, targetH);
+      ctx.restore();
+    }
+
+    async function processOne(photoFile, wmImg, settings){
+      const { img:photo, url } = await readFileAsImage(photoFile);
+
+      const cv = $("cv");
+      const ctx = cv.getContext("2d", { willReadFrequently:true });
+
+      // Keep original dimensions
+      const w = photo.naturalWidth || photo.width;
+      const h = photo.naturalHeight || photo.height;
+
+      cv.width = w;
+      cv.height = h;
+
+      ctx.clearRect(0,0,w,h);
+      ctx.drawImage(photo, 0, 0, w, h);
+
+      drawWatermark(ctx, w, h, wmImg, settings);
+
+      // export
+      const mime = settings.mime;
+      const q = settings.quality;
+
+      let blob = await new Promise((resolve) => cv.toBlob(resolve, mime, q));
+
+      // cleanup URL for photo
+      URL.revokeObjectURL(url);
+
+      return { blob, width:w, height:h };
+    }
+
+    // ---------- UI state ----------
+    const state = {
+      photos: [],
+      wm: null,          // {file, img, url}
+      outputs: []        // [{name, blob, url, size, w,h}]
+    };
+
+    function updateSliders(){
+      $("opacityVal").textContent = `${$("opacity").value}%`;
+      $("scaleVal").textContent = `${$("scale").value}% از عرض`;
+      $("marginVal").textContent = `${$("margin").value}px`;
+    }
+    ["opacity","scale","margin"].forEach(id => $(id).addEventListener("input", updateSliders));
+    updateSliders();
+
+    // watermark preview
+    $("watermark").addEventListener("change", async () => {
+      const f = $("watermark").files?.[0];
+      if(!f) return;
+
+      try{
+        if(state.wm?.url) URL.revokeObjectURL(state.wm.url);
+        const { img, url } = await readFileAsImage(f);
+        state.wm = { file:f, img, url };
+
+        $("wmImg").src = url;
+        $("wmImg").style.display = "block";
+        $("wmEmpty").style.display = "none";
+        $("wmName").textContent = `واترمارک: ${f.name}`;
+        $("wmMeta").textContent = `ابعاد: ${img.width}×${img.height} | حجم: ${Math.round(f.size/1024)}KB`;
+        toast("واترمارک آماده است.", "ok");
+      }catch(e){
+        console.error(e);
+        toast("خطا در خواندن واترمارک.", "err");
+      }
+    });
+
+    $("photos").addEventListener("change", () => {
+      const files = Array.from($("photos").files || []).filter(f => f.type.startsWith("image/"));
+      state.photos = files;
+      toast(`تعداد عکس‌ها: ${files.length}`, files.length ? "ok" : "warn");
+    });
+
+    function clearOutputs(){
+      for(const o of state.outputs){
+        if(o.url) URL.revokeObjectURL(o.url);
+      }
+      state.outputs = [];
+      $("outList").innerHTML = "";
+    }
+
+    function renderOutputs(){
+      const wrap = $("outList");
+      wrap.innerHTML = "";
+
+      if(!state.outputs.length){
+        wrap.innerHTML = `<div class="hint">هنوز خروجی نداریم. عکس‌ها + واترمارک را بده و «اعمال واترمارک» را بزن.</div>`;
+        return;
+      }
+
+      for(const o of state.outputs){
+        const el = document.createElement("div");
+        el.className = "item";
+        el.innerHTML = `
+          <div>
+            <div class="name">${o.name}</div>
+            <div class="meta">ابعاد: ${o.w}×${o.h} | حجم: ${Math.round(o.size/1024)}KB</div>
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+            <a class="btn small" href="${o.url}" download="${o.name}">دانلود</a>
+            <span class="pill">${o.ext.toUpperCase()}</span>
+          </div>
+        `;
+        wrap.appendChild(el);
+      }
+    }
+
+    async function processAll(){
+      if(!state.photos.length){
+        toast("اول عکس‌ها را انتخاب کن.", "warn");
+        return;
+      }
+      if(!state.wm?.img){
+        toast("اول واترمارک را انتخاب کن.", "warn");
+        return;
+      }
+
+      clearOutputs();
+      renderOutputs();
+
+      const pos = $("position").value;
+      const mime = $("format").value;
+      const quality = parseFloat($("quality").value);
+      const opacity = clamp(parseInt($("opacity").value,10)/100, 0, 1);
+      const scalePct = clamp(parseInt($("scale").value,10)/100, 0.05, 0.8);
+      const margin = clamp(parseInt($("margin").value,10), 0, 200);
+
+      const ext = mimeToExt(mime);
+
+      toast("پردازش شروع شد…", "warn");
+
+      const outputs = [];
+      for(let i=0; i<state.photos.length; i++){
+        const f = state.photos[i];
+        try{
+          const res = await processOne(f, state.wm.img, { position:pos, mime, quality, opacity, scalePct, margin });
+          const outName = `${safeBaseName(f.name)}_wm.${ext}`;
+          const url = URL.createObjectURL(res.blob);
+          outputs.push({ name: outName, blob: res.blob, url, size: res.blob.size, w: res.width, h: res.height, ext });
+        }catch(e){
+          console.error(e);
+        }
+      }
+
+      state.outputs = outputs;
+      renderOutputs();
+
+      toast(`تمام شد: ${outputs.length} خروجی ساخته شد.`, "ok");
+    }
+
+    $("processBtn").addEventListener("click", processAll);
+
+    // ZIP download
+    $("downloadZipBtn").addEventListener("click", async () => {
+      if(!state.outputs.length){
+        toast("اول خروجی‌ها را بساز.", "warn");
+        return;
+      }
+      const zip = new JSZip();
+      const folder = zip.folder("rayantarh_watermarked");
+
+      for(const o of state.outputs){
+        folder.file(o.name, o.blob);
+      }
+
+      toast("در حال ساخت ZIP…", "warn");
+      const blob = await zip.generateAsync({ type:"blob" });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "rayantarh_watermarked.zip";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      URL.revokeObjectURL(url);
+      toast("ZIP دانلود شد.", "ok");
+    });
+
+    $("resetBtn").addEventListener("click", () => {
+      clearOutputs();
+      state.photos = [];
+      if(state.wm?.url) URL.revokeObjectURL(state.wm.url);
+      state.wm = null;
+
+      $("photos").value = "";
+      $("watermark").value = "";
+      $("wmImg").removeAttribute("src");
+      $("wmImg").style.display = "none";
+      $("wmEmpty").style.display = "block";
+      $("wmName").textContent = "واترمارک انتخاب نشده";
+      $("wmMeta").textContent = "—";
+
+      toast("ریست شد.", "ok");
+      renderOutputs();
+    });
+
+    renderOutputs();
+  </script>
+</body>
+</html>
