@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Remark Generator Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Vazirmatn', sans-serif; background-color: #0f172a; color: #f8fafc; }
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .toast-enter { animation: slideIn 0.3s ease-out forwards; }
+        .toast-leave { animation: slideOut 0.3s ease-in forwards; }
+        @keyframes slideIn {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes slideOut {
+            from { transform: translateY(0); opacity: 1; }
+            to { transform: translateY(100%); opacity: 0; }
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #1e293b; rounded-lg: 8px;}
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 8px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+    </style>
+</head>
+<body class="min-h-screen p-4 sm:p-8">
+
+    <header class="max-w-6xl mx-auto mb-8 text-center sm:text-right flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div>
+            <h1 class="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-l from-blue-400 to-emerald-400">Remark Generator Pro</h1>
+            <p class="text-slate-400 text-sm mt-1">ساخت، مدیریت و کپی سریع نام کانفیگ‌ها</p>
+        </div>
+        <div class="flex gap-2">
+            <span class="bg-slate-800 text-xs py-1 px-3 rounded-full border border-slate-700">نسخه 3.0 مینیمال</span>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- ======================= -->
+        <!-- Right Column: Settings  -->
+        <!-- ======================= -->
+        <div class="lg:col-span-2 space-y-6">
+            
+            <!-- Generate Panel -->
+            <div class="glass-panel rounded-2xl p-6 shadow-xl">
+                <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                    تنظیمات کانفیگ
+                </h2>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    
+                    <!-- Flag Selection -->
+                    <div class="space-y-2">
+                        <label class="text-sm text-slate-300">پرچم کشور:</label>
+                        <select id="country" class="w-full bg-slate-800 border border-slate-600 rounded-lg p-3 outline-none focus:border-blue-500 transition-colors cursor-pointer appearance-none">
+                            <option value="🇹🇷">🇹🇷 ترکیه</option>
+                            <option value="🇩🇪">🇩🇪 آلمان</option>
+                            <option value="🇫🇮">🇫🇮 فنلاند</option>
+                            <option value="🇳🇱">🇳🇱 هلند</option>
+                            <option value="🇩🇰">🇩🇰 دانمارک</option>
+                            <option value="🇫🇷">🇫🇷 فرانسه</option>
+                            <option value="🇬🇧">🇬🇧 انگلیس</option>
+                            <option value="🇺🇸">🇺🇸 آمریکا</option>
+                            <option value="custom" class="text-blue-400">➕ پرچم/متن دلخواه...</option>
+                        </select>
+                    </div>
+
+                    <!-- Icon Selection -->
+                    <div class="space-y-2">
+                        <label class="text-sm text-slate-300">نوع کانفیگ (آیکون):</label>
+                        <select id="icon" class="w-full bg-slate-800 border border-slate-600 rounded-lg p-3 outline-none focus:border-blue-500 transition-colors cursor-pointer appearance-none">
+                            <option value="⚡">⚡ مستقیم (TCP)</option>
+                            <option value="🧿">🧿 ریالیتی (Reality)</option>
+                            <option value="☁️">☁️ ابری (Cloud/CDN)</option>
+                            <option value="">بدون آیکون</option>
+                        </select>
+                    </div>
+
+                    <!-- Custom Flag Input (Hidden by default) -->
+                    <div id="customFlagContainer" class="hidden sm:col-span-2 space-y-2">
+                        <label class="text-sm text-slate-300">ایموجی یا متن پرچم دلخواه:</label>
+                        <input type="text" id="customFlag" placeholder="مثلاً 🇮🇹 یا [IT]" class="w-full bg-slate-800 border border-slate-600 rounded-lg p-3 outline-none focus:border-blue-500 transition-colors">
+                    </div>
+
+                    <!-- Server Number -->
+                    <div class="space-y-2">
+                        <label class="text-sm text-slate-300">شماره سرور:</label>
+                        <div class="flex items-center">
+                            <button onclick="changeNumber('serverNum', -1)" class="bg-slate-700 hover:bg-slate-600 text-white px-4 py-3 rounded-r-lg border-y border-r border-slate-600 transition-colors">-</button>
+                            <input type="number" id="serverNum" value="1" min="1" class="w-full bg-slate-800 border-y border-slate-600 p-3 text-center outline-none focus:bg-slate-700" style="-moz-appearance: textfield;">
+                            <button onclick="changeNumber('serverNum', 1)" class="bg-slate-700 hover:bg-slate-600 text-white px-4 py-3 rounded-l-lg border-y border-l border-slate-600 transition-colors">+</button>
+                        </div>
+                    </div>
+
+                    <!-- Clone Number -->
+                    <div class="space-y-2">
+                        <label class="text-sm text-slate-300">شماره کلون:</label>
+                        <div class="flex items-center">
+                            <button onclick="changeNumber('cloneNum', -1)" class="bg-slate-700 hover:bg-slate-600 text-white px-4 py-3 rounded-r-lg border-y border-r border-slate-600 transition-colors">-</button>
+                            <input type="number" id="cloneNum" value="1" min="1" class="w-full bg-slate-800 border-y border-slate-600 p-3 text-center outline-none focus:bg-slate-700" style="-moz-appearance: textfield;">
+                            <button onclick="changeNumber('cloneNum', 1)" class="bg-slate-700 hover:bg-slate-600 text-white px-4 py-3 rounded-l-lg border-y border-l border-slate-600 transition-colors">+</button>
+                        </div>
+                    </div>
+
+                    <!-- Custom Description -->
+                    <div class="sm:col-span-2 space-y-2">
+                        <label class="text-sm text-slate-300">توضیحات (اختیاری):</label>
+                        <input type="text" id="descText" placeholder="مثلاً: مخصوص گیم، همراه اول، ..." class="w-full bg-slate-800 border border-slate-600 rounded-lg p-3 outline-none focus:border-blue-500 transition-colors">
+                    </div>
+                </div>
+
+                <div class="mt-8 pt-6 border-t border-slate-700">
+                    <label class="text-sm text-emerald-400 mb-2 block">پیش‌نمایش خروجی:</label>
+                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                        <div id="resultDisplay" class="flex-1 bg-slate-900 border-2 border-slate-700 rounded-xl p-4 text-center text-lg sm:text-xl font-bold text-white shadow-inner overflow-hidden text-ellipsis whitespace-nowrap">
+                            <!-- Output will appear here -->
+                        </div>
+                        <button id="copyBtn" class="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-bold py-4 px-6 rounded-xl transition-all active:scale-95 shadow-lg flex items-center justify-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+                            کپی متن
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Actions Container -->
+                <div class="mt-6 flex flex-col sm:flex-row gap-4">
+                    <button id="saveBtn" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-3 px-4 rounded-lg transition-colors border border-slate-600 text-sm font-semibold shadow-sm flex items-center justify-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
+                        <span id="saveBtnText">ذخیره در تاریخچه (تکی)</span>
+                    </button>
+                    
+                    <div class="flex-1 flex gap-2">
+                        <input type="number" id="bulkCount" value="5" min="2" max="50" class="w-20 bg-slate-800 border border-slate-600 rounded-lg p-3 text-center outline-none" title="تعداد کلون برای ساخت گروهی">
+                        <button id="bulkBtn" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-3 px-4 rounded-lg transition-colors text-sm font-semibold shadow-sm flex items-center justify-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                            ساخت گروهی
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ======================= -->
+        <!-- Left Column: Sidebar    -->
+        <!-- ======================= -->
+        <div class="glass-panel rounded-2xl flex flex-col shadow-xl overflow-hidden h-[600px] lg:h-auto">
+            
+            <!-- Tabs -->
+            <div class="flex border-b border-slate-700 bg-slate-800/50">
+                <button onclick="switchTab('history')" id="tab-history" class="flex-1 py-4 text-sm font-semibold text-blue-400 border-b-2 border-blue-400 transition-colors">تاریخچه</button>
+                <button onclick="switchTab('favorites')" id="tab-favorites" class="flex-1 py-4 text-sm font-semibold text-slate-400 border-b-2 border-transparent hover:text-slate-200 transition-colors">علاقه‌مندی‌ها</button>
+            </div>
+
+            <!-- List Container -->
+            <div class="flex-1 overflow-y-auto p-4 space-y-3" id="itemsList">
+                <!-- Items will be injected here via JS -->
+                <div class="text-center text-slate-500 mt-10 text-sm">لیست خالی است.</div>
+            </div>
+
+            <!-- List Footer -->
+            <div class="bg-slate-800/80 p-3 border-t border-slate-700 text-xs text-slate-400 flex justify-between items-center">
+                <span id="itemCountDisplay">0 مورد</span>
+                <button onclick="clearHistory()" class="text-red-400 hover:text-red-300">پاکسازی لیست</button>
+            </div>
+        </div>
+    </main>
+
+    <div id="toastContainer" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2"></div>
+
+    <script>
+        // App State
+        let appState = {
+            history: JSON.parse(localStorage.getItem('remarkHistory')) || [],
+            currentTab: 'history', // 'history' or 'favorites'
+            editModeId: null
+        };
+
+        // DOM Elements
+        const DOM = {
+            country: document.getElementById('country'),
+            customFlagContainer: document.getElementById('customFlagContainer'),
+            customFlag: document.getElementById('customFlag'),
+            icon: document.getElementById('icon'),
+            serverNum: document.getElementById('serverNum'),
+            cloneNum: document.getElementById('cloneNum'),
+            descText: document.getElementById('descText'),
+            resultDisplay: document.getElementById('resultDisplay'),
+            saveBtnText: document.getElementById('saveBtnText'),
+            itemsList: document.getElementById('itemsList'),
+            itemCountDisplay: document.getElementById('itemCountDisplay'),
+            toastContainer: document.getElementById('toastContainer')
+        };
+
+        // Utility: Convert numbers to superscript
+        function toSuperscript(str) {
+            const map = {'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹'};
+            return String(str).split('').map(c => map[c] || c).join('');
+        }
+
+        // Get form values
+        function getFormData() {
+            const isCustom = DOM.country.value === 'custom';
+            return {
+                flag: isCustom ? DOM.customFlag.value.trim() : DOM.country.value,
+                isCustomFlag: isCustom,
+                icon: DOM.icon.value,
+                serverNum: parseInt(DOM.serverNum.value) || 1,
+                cloneNum: parseInt(DOM.cloneNum.value) || 1,
+                desc: DOM.descText.value.trim()
+            };
+        }
+
+        // Apply Format: 🇹🇷 ⁻¹ ⚡⁻¹ | نام دلخواه
+        function formatRemark(data) {
+            const sNum = toSuperscript(data.serverNum);
+            const cNum = toSuperscript(data.cloneNum);
+            
+            const flagPart = data.flag ? data.flag : '';
+            const iconPart = data.icon ? data.icon : '';
+            const descPart = data.desc ? ` | ${data.desc}` : '';
+            
+            // Format structure
+            return `${flagPart} ⁻${sNum} ${iconPart}⁻${cNum}${descPart}`.trim();
+        }
+
+        // Update main preview box
+        function updatePreview() {
+            const data = getFormData();
+            const formatted = formatRemark(data);
+            DOM.resultDisplay.textContent = formatted || 'در انتظار ورودی...';
+            
+            // Toggle custom flag input
+            if (data.isCustomFlag) {
+                DOM.customFlagContainer.classList.remove('hidden');
+            } else {
+                DOM.customFlagContainer.classList.add('hidden');
+            }
+        }
+
+        // Change number via +/- buttons
+        function changeNumber(inputId, amount) {
+            const input = document.getElementById(inputId);
+            let val = parseInt(input.value) || 1;
+            val += amount;
+            if (val < 1) val = 1;
+            input.value = val;
+            updatePreview();
+        }
+
+        // Toast Notification System
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            const colors = type === 'success' ? 'bg-emerald-600' : (type === 'error' ? 'bg-red-600' : 'bg-blue-600');
+            toast.className = `${colors} text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-3 toast-enter font-medium text-sm`;
+            toast.innerHTML = `
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                ${message}
+            `;
+            DOM.toastContainer.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.replace('toast-enter', 'toast-leave');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Fallback for document.execCommand
+        function fallbackCopy(text) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed"; // Avoid scrolling
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) showToast('با موفقیت کپی شد!');
+                else showToast('خطا در کپی کردن متن.', 'error');
+            } catch (err) {
+                showToast('مرورگر شما از کپی پشتیبانی نمی‌کند.', 'error');
+            }
+            document.body.removeChild(textArea);
+        }
+
+        // Main Copy Function
+        function copyToClipboard(textToCopy) {
+            if (!textToCopy || textToCopy === 'در انتظار ورودی...') return;
+            
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(textToCopy)
+                    .then(() => showToast('با موفقیت کپی شد!'))
+                    .catch(() => fallbackCopy(textToCopy)); // Try fallback if API blocked
+            } else {
+                fallbackCopy(textToCopy);
+            }
+        }
+
+        // Save Data to Local Storage
+        function persistData() {
+            localStorage.setItem('remarkHistory', JSON.stringify(appState.history));
+            renderList();
+        }
+
+        // Save Current Remark
+        function saveRemark(isBulk = false) {
+            const data = getFormData();
+            const text = formatRemark(data);
+            
+            if (appState.editModeId !== null && !isBulk) {
+                // Update existing
+                const idx = appState.history.findIndex(item => item.id === appState.editModeId);
+                if (idx > -1) {
+                    appState.history[idx] = { ...appState.history[idx], ...data, text, updatedAt: Date.now() };
+                    showToast('با موفقیت بروزرسانی شد');
+                }
+                appState.editModeId = null;
+                DOM.saveBtnText.textContent = 'ذخیره در تاریخچه (تکی)';
+            } else {
+                // Create new
+                const newItem = {
+                    id: Date.now() + Math.random(),
+                    ...data,
+                    text,
+                    isFavorite: false,
+                    createdAt: Date.now()
+                };
+                appState.history.unshift(newItem); // Add to beginning
+                if(!isBulk) showToast('در تاریخچه ذخیره شد');
+            }
+            
+            persistData();
+            
+            // Auto increment clone for single save
+            if(!isBulk) {
+               DOM.cloneNum.value = data.cloneNum + 1;
+               updatePreview();
+            }
+        }
+
+        // Bulk Generation
+        function generateBulk() {
+            const bulkCountInput = document.getElementById('bulkCount');
+            const count = parseInt(bulkCountInput.value);
+            
+            if (isNaN(count) || count < 2 || count > 100) {
+                showToast('تعداد باید بین 2 تا 100 باشد.', 'error');
+                return;
+            }
+
+            // Exit edit mode if active
+            appState.editModeId = null;
+            DOM.saveBtnText.textContent = 'ذخیره در تاریخچه (تکی)';
+
+            let initialClone = parseInt(DOM.cloneNum.value) || 1;
+            
+            for (let i = 0; i < count; i++) {
+                DOM.cloneNum.value = initialClone + i;
+                saveRemark(true); // true = isBulk (no toast per item)
+            }
+            
+            // Setup for next use
+            DOM.cloneNum.value = initialClone + count;
+            updatePreview();
+            showToast(`${count} ریمارک با موفقیت ساخته شد!`);
+        }
+
+        // Switch between History and Favorites
+        function switchTab(tab) {
+            appState.currentTab = tab;
+            
+            // Update UI
+            const tabHist = document.getElementById('tab-history');
+            const tabFav = document.getElementById('tab-favorites');
+            
+            if(tab === 'history') {
+                tabHist.className = "flex-1 py-4 text-sm font-semibold text-blue-400 border-b-2 border-blue-400 transition-colors";
+                tabFav.className = "flex-1 py-4 text-sm font-semibold text-slate-400 border-b-2 border-transparent hover:text-slate-200 transition-colors";
+            } else {
+                tabFav.className = "flex-1 py-4 text-sm font-semibold text-blue-400 border-b-2 border-blue-400 transition-colors";
+                tabHist.className = "flex-1 py-4 text-sm font-semibold text-slate-400 border-b-2 border-transparent hover:text-slate-200 transition-colors";
+            }
+            
+            renderList();
+        }
+
+        // Action Handlers
+        function copyItem(id) {
+            const item = appState.history.find(i => i.id === id);
+            if(item) copyToClipboard(item.text);
+        }
+
+        function toggleFavorite(id) {
+            const idx = appState.history.findIndex(i => i.id === id);
+            if (idx > -1) {
+                appState.history[idx].isFavorite = !appState.history[idx].isFavorite;
+                persistData();
+            }
+        }
+
+        function deleteItem(id) {
+            appState.history = appState.history.filter(i => i.id !== id);
+            if (appState.editModeId === id) {
+                appState.editModeId = null;
+                DOM.saveBtnText.textContent = 'ذخیره در تاریخچه (تکی)';
+            }
+            persistData();
+        }
+
+        function editItem(id) {
+            const item = appState.history.find(i => i.id === id);
+            if (!item) return;
+
+            // Load data into form
+            if (item.isCustomFlag) {
+                DOM.country.value = 'custom';
+                DOM.customFlag.value = item.flag;
+            } else {
+                DOM.country.value = item.flag;
+            }
+            
+            DOM.icon.value = item.icon || '';
+            DOM.serverNum.value = item.serverNum;
+            DOM.cloneNum.value = item.cloneNum;
+            DOM.descText.value = item.desc || '';
+
+            // Set state to edit mode
+            appState.editModeId = id;
+            DOM.saveBtnText.textContent = 'بروزرسانی تغییرات';
+            
+            updatePreview();
+            
+            // Scroll to top on mobile
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            showToast('آماده ویرایش', 'info');
+        }
+
+        function clearHistory() {
+            if(confirm('آیا از پاک کردن این لیست اطمینان دارید؟')) {
+                if (appState.currentTab === 'history') {
+                    appState.history = appState.history.filter(i => i.isFavorite); // Keep favorites
+                } else {
+                    // In favorites tab, un-favorite all
+                    appState.history.forEach(i => i.isFavorite = false);
+                }
+                appState.editModeId = null;
+                DOM.saveBtnText.textContent = 'ذخیره در تاریخچه (تکی)';
+                persistData();
+            }
+        }
+
+        // Render List DOM
+        function renderList() {
+            DOM.itemsList.innerHTML = '';
+            
+            let displayData = appState.history;
+            if (appState.currentTab === 'favorites') {
+                displayData = appState.history.filter(i => i.isFavorite);
+            }
+
+            DOM.itemCountDisplay.textContent = `${displayData.length} مورد`;
+
+            if (displayData.length === 0) {
+                DOM.itemsList.innerHTML = `<div class="text-center text-slate-500 mt-10 text-sm">لیست ${appState.currentTab === 'history' ? 'تاریخچه' : 'علاقه‌مندی‌ها'} خالی است.</div>`;
+                return;
+            }
+
+            displayData.forEach(item => {
+                const el = document.createElement('div');
+                const isEditing = appState.editModeId === item.id;
+                
+                el.className = `p-3 rounded-xl border ${isEditing ? 'border-blue-500 bg-slate-800' : 'border-slate-700 bg-slate-800/40 hover:bg-slate-800'} transition-all group`;
+                
+                el.innerHTML = `
+                    <div class="flex items-center justify-between gap-2">
+                        <div class="flex-1 font-mono text-sm sm:text-base text-white truncate cursor-pointer" onclick="copyItem(${item.id})" title="کلیک برای کپی">
+                            ${item.text}
+                        </div>
+                        <div class="flex items-center gap-1 opacity-100 sm:opacity-50 group-hover:opacity-100 transition-opacity">
+                            <button onclick="toggleFavorite(${item.id})" class="p-1.5 rounded-md hover:bg-slate-700 ${item.isFavorite ? 'text-yellow-400' : 'text-slate-400 hover:text-yellow-400'}" title="نشان کردن">
+                                <svg class="w-4 h-4" fill="${item.isFavorite ? 'currentColor' : 'none'}" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path></svg>
+                            </button>
+                            <button onclick="editItem(${item.id})" class="p-1.5 rounded-md text-slate-400 hover:bg-blue-600 hover:text-white" title="ویرایش">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                            </button>
+                            <button onclick="deleteItem(${item.id})" class="p-1.5 rounded-md text-slate-400 hover:bg-red-600 hover:text-white" title="حذف">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                DOM.itemsList.appendChild(el);
+            });
+        }
+
+        // Attach auto-update to all inputs
+        [DOM.country, DOM.customFlag, DOM.icon, DOM.serverNum, DOM.cloneNum, DOM.descText].forEach(el => {
+            el.addEventListener('input', () => {
+                updatePreview();
+                // If editing and changed an input, UI stays in edit mode till save
+            });
+        });
+
+        // Button Clicks
+        document.getElementById('copyBtn').addEventListener('click', () => {
+            copyToClipboard(DOM.resultDisplay.textContent);
+        });
+
+        document.getElementById('saveBtn').addEventListener('click', () => {
+            saveRemark(false);
+        });
+
+        document.getElementById('bulkBtn').addEventListener('click', generateBulk);
+
+        // Initial Boot
+        updatePreview();
+        renderList();
+
+    </script>
+</body>
+</html>
