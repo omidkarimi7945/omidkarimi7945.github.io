@@ -3,64 +3,170 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>پنل نهایی لایسنس | هامان سرور</title>
+    <title>پنل پیشرفته لایسنس و کیف پول | هامان سرور</title>
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    
     <style>
         :root {
             --primary: #4338ca;
+            --primary-hover: #3730a3;
             --success: #059669;
-            --dark-blue: #1e1b4b;
-            --glass: rgba(255, 255, 255, 0.05);
+            --wallet: #ca8a04;
+            --danger: #ef4444;
+            --bg-gradient: radial-gradient(circle at top, #1e1b4b, #020617);
+            --container-bg: rgba(255, 255, 255, 0.03);
+            --card-bg: rgba(15, 23, 42, 0.7);
+            --text-main: #e2e8f0;
+            --text-muted: #818cf8;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --input-bg: #0f172a;
+            --input-border: #334155;
+            --output-bg: #000;
+            --table-header: rgba(67, 56, 202, 0.2);
+            --table-row-hover: rgba(255, 255, 255, 0.03);
+            --tab-active: rgba(99, 102, 241, 0.2);
+        }
+
+        [data-theme="light"] {
+            --bg-gradient: radial-gradient(circle at top, #f8fafc, #cbd5e1);
+            --container-bg: rgba(255, 255, 255, 0.9);
+            --card-bg: rgba(255, 255, 255, 1);
+            --text-main: #0f172a;
+            --text-muted: #4f46e5;
+            --border-color: #cbd5e1;
+            --input-bg: #f8fafc;
+            --input-border: #cbd5e1;
+            --output-bg: #f1f5f9;
+            --table-header: rgba(67, 56, 202, 0.1);
+            --table-row-hover: rgba(0, 0, 0, 0.02);
+            --tab-active: rgba(99, 102, 241, 0.15);
         }
 
         body {
             font-family: Vazirmatn, sans-serif;
-            background: radial-gradient(circle at center, #1e1b4b, #020617);
-            color: #e2e8f0;
+            background: var(--bg-gradient);
+            color: var(--text-main);
             display: flex;
             justify-content: center;
-            padding: 40px 20px;
+            padding: 40px 10px;
             margin: 0;
             min-height: 100vh;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
         }
 
         .container {
             width: 100%;
-            max-width: 600px;
-            background: var(--glass);
-            backdrop-filter: blur(15px);
-            border-radius: 28px;
-            padding: 30px;
-            border: 1px solid rgba(255,255,255,0.1);
+            max-width: 850px;
+            background: var(--container-bg);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 25px;
+            border: 1px solid var(--border-color);
             box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            position: relative;
         }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .theme-toggle {
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            color: var(--text-main);
+            padding: 8px 15px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: 0.3s;
+            font-family: Vazirmatn;
+        }
+
+        .header-titles h1 { font-size: 20px; margin: 0 0 5px 0; text-align: center; }
+        .header-titles .subtitle { font-size: 13px; color: var(--text-muted); text-align: center; display: block; }
+
+        .tabs-nav {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-main);
+            padding: 10px 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-family: Vazirmatn;
+            font-weight: bold;
+            font-size: 14px;
+            transition: 0.2s;
+            white-space: nowrap;
+        }
+        
+        .tab-btn:hover { background: var(--table-row-hover); }
+        .tab-btn.active { background: var(--tab-active); color: var(--primary); border: 1px solid var(--primary); }
+
+        .tab-content { display: none; animation: fadeIn 0.4s ease; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat-box {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            border-radius: 16px;
+            text-align: center;
+        }
+        .stat-box h3 { margin: 0 0 10px 0; font-size: 14px; color: var(--text-muted); }
+        .stat-box .val { font-size: 24px; font-weight: bold; color: var(--text-main); }
+        .stat-box .sub-val { font-size: 12px; color: var(--success); margin-top: 5px; display: block;}
 
         .card {
-            background: rgba(15, 23, 42, 0.6);
+            background: var(--card-bg);
             border-radius: 18px;
-            padding: 20px;
-            margin-bottom: 25px;
-            border: 1px solid rgba(255,255,255,0.05);
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
         }
+        
+        .card-title { font-size: 17px; margin: 0 0 15px 0; display: flex; align-items: center; justify-content: space-between; }
 
-        h1 { font-size: 20px; text-align: center; color: #fff; margin-bottom: 5px; }
-        .subtitle { text-align: center; font-size: 12px; color: #818cf8; margin-bottom: 25px; display: block; }
+        .form-group { display: flex; gap: 10px; margin-bottom: 15px; }
 
-        input {
+        input, select, textarea {
             width: 100%;
             padding: 14px;
             border-radius: 12px;
-            border: 2px solid #334155;
-            background: #0f172a;
-            color: #fff;
-            font-family: Vazirmatn;
+            border: 2px solid var(--input-border);
+            background: var(--input-bg);
+            color: var(--text-main);
+            font-family: Vazirmatn, monospace;
             box-sizing: border-box;
-            margin-bottom: 15px;
-            text-align: center;
-            font-size: 16px;
+            font-size: 14px;
+            transition: all 0.3s;
         }
+        
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); }
+        .input-count { width: 120px; text-align: center; }
+        textarea { resize: vertical; min-height: 120px; direction: ltr; }
 
-        .btn-row { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px; }
+        .btn-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; }
         
         button {
             padding: 12px;
@@ -69,121 +175,622 @@
             cursor: pointer;
             font-family: Vazirmatn;
             font-weight: bold;
-            transition: 0.3s;
+            font-size: 14px;
+            transition: 0.2s;
+            display: inline-flex; justify-content: center; align-items: center; gap: 5px;
         }
+        button:hover { filter: brightness(1.1); transform: translateY(-1px); }
+        button:active { transform: scale(0.97); }
 
         .btn-gen { background: var(--primary); color: white; }
-        .btn-util { background: #334155; color: white; }
-        .btn-verify { background: var(--success); color: white; width: 100%; margin-top: 10px; }
+        .btn-gen-wallet { background: var(--wallet); color: white; }
+        .btn-util { background: var(--input-bg); color: var(--text-main); border: 1px solid var(--border-color); }
+        .btn-verify { background: var(--success); color: white; width: 100%; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-small { padding: 6px 12px; font-size: 12px; border-radius: 8px; }
 
-        #output {
-            background: #000;
+        .output-box {
+            background: var(--output-bg);
             padding: 15px;
             border-radius: 12px;
-            height: 180px;
+            height: 150px;
             overflow-y: auto;
             direction: ltr;
             color: #10b981;
             font-family: monospace;
             margin-top: 15px;
             white-space: pre-wrap;
-            border: 1px solid #1e293b;
+            border: 1px solid var(--input-border);
+            font-size: 13px;
         }
 
-        .result-decode {
-            margin-top: 10px;
-            padding: 15px;
-            background: #020617;
-            border: 1px solid #334155;
-            border-radius: 12px;
-            text-align: center;
-            font-weight: bold;
-            min-height: 40px;
-        }
+        .filter-row { display: flex; gap: 10px; margin: 15px 0; flex-wrap: wrap; }
+        
+        .table-container { overflow-x: auto; border-radius: 12px; border: 1px solid var(--border-color); display: none; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: right; }
+        th, td { padding: 12px; border-bottom: 1px solid var(--border-color); }
+        th { background: var(--table-header); font-weight: bold; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover { background: var(--table-row-hover); }
+        
+        .status-ok { color: #10b981; font-weight: bold; }
+        .status-bad { color: #ef4444; font-weight: bold; }
+        .hidden-row { display: none !important; }
 
-        .footer { text-align: center; font-size: 11px; color: #64748b; margin-top: 25px; }
+        #custom-toast {
+            position: fixed; bottom: -60px; left: 50%; transform: translateX(-50%);
+            background: #10b981; color: white; padding: 12px 24px; border-radius: 12px;
+            font-weight: bold; z-index: 1000; transition: bottom 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5); font-size: 14px;
+        }
+        .toast-visible { bottom: 30px !important; }
+
+        #progress-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); backdrop-filter: blur(5px);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 2000; opacity: 0; pointer-events: none; transition: 0.3s;
+        }
+        #progress-overlay.active { opacity: 1; pointer-events: all; }
+        .progress-box { background: var(--card-bg); padding: 30px; border-radius: 20px; width: 300px; text-align: center; border: 1px solid var(--border-color); }
+        .progress-bar-container { width: 100%; height: 10px; background: var(--input-bg); border-radius: 10px; margin-top: 20px; overflow: hidden; }
+        .progress-bar { height: 100%; width: 0%; background: #10b981; transition: width 0.1s; }
+
+        @media (max-width: 600px) {
+            .btn-row { grid-template-columns: 1fr 1fr; }
+            .form-group { flex-direction: column; }
+            .input-count { width: 100%; }
+        }
     </style>
 </head>
-<body>
+<body data-theme="dark">
 
 <div class="container">
-    <h1>🚀 مدیریت لایسنس رایان طرح</h1>
-    <span class="subtitle">بهینه شده برای دیتابیس هامان سرور</span>
-
-    <div class="card">
-        <input type="number" id="planNum" placeholder="شماره پلن را وارد کنید">
-        <div class="btn-row">
-            <button class="btn-gen" onclick="generate()">ساخت ۳۰۰ کد</button>
-            <button class="btn-util" onclick="copy()">کپی</button>
-            <button class="btn-util" onclick="download()">دانلود TXT</button>
+    <div class="header-top">
+        <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">☀️ تم روشن</button>
+        <div class="header-titles">
+            <h1>مدیریت یکپارچه لایسنس و کیف پول</h1>
+            <span class="subtitle">هامان سرور | نسخه ۳.۰ (Enterprise)</span>
         </div>
-        <div id="output">کدها اینجا نمایش داده می‌شوند...</div>
+        <div style="width: 85px;"></div> <!-- Spacer for layout balance -->
     </div>
 
-    <div class="card">
-        <input type="text" id="verifyInput" placeholder="کد را برای دیکود وارد کنید">
-        <button class="btn-verify" onclick="verify()">🔍 رمزگشایی کامل</button>
-        <div id="verifyResult" class="result-decode">نتیجه...</div>
+    <div class="tabs-nav">
+        <button class="tab-btn active" onclick="switchTab('tab-dashboard')">📊 داشبورد و تاریخچه</button>
+        <button class="tab-btn" onclick="switchTab('tab-plan')">🔑 تولید پلن</button>
+        <button class="tab-btn" onclick="switchTab('tab-wallet')">💰 تولید کیف پول</button>
+        <button class="tab-btn" onclick="switchTab('tab-verify')">🔍 صحت‌سنجی</button>
     </div>
 
-    <div class="footer">
-        طراحی اختصاصی با فونت وزیر | ۲۰۲۶
+    <div id="tab-dashboard" class="tab-content active">
+        <div class="stats-grid">
+            <div class="stat-box">
+                <h3>پلن‌های ساخته شده امروز</h3>
+                <div class="val" id="stat-plans">0</div>
+            </div>
+            <div class="stat-box">
+                <h3>کدهای کیف پول امروز</h3>
+                <div class="val" id="stat-wallets">0</div>
+            </div>
+            <div class="stat-box">
+                <h3>ارزش کل تولیدی امروز (تومان)</h3>
+                <div class="val" id="stat-value" style="color: #10b981;">0</div>
+                <span class="sub-val" id="stat-date"></span>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">
+                <span>🕒 تاریخچه تولید (ذخیره در مرورگر)</span>
+                <button class="btn-util btn-small" onclick="clearHistory()">🗑️ پاکسازی تاریخچه</button>
+            </div>
+            <div style="overflow-x: auto; border: 1px solid var(--border-color); border-radius: 12px;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>تاریخ و ساعت</th>
+                            <th>نوع</th>
+                            <th>مشخصات</th>
+                            <th>تعداد</th>
+                            <th>عملیات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody">
+                        <tr><td colspan="5" style="text-align:center;">تاریخچه‌ای وجود ندارد.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="tab-plan" class="tab-content">
+        <div class="card">
+            <div class="card-title">
+                <span>🔑 ساخت عمده کد اشتراک</span>
+                <button class="btn-util btn-small" onclick="clearBox('output-plan')">🧹 پاک کردن کادر</button>
+            </div>
+            <div class="form-group">
+                <select id="planSelect">
+                    <!-- پلن‌های یک‌ماهه (آپدیت شده طبق جدول جدید) -->
+                    <optgroup label="💖 پلن‌های یک‌ماهه">
+                        <option value="5532" data-bot="15" data-price="99000">یک‌ماهه | ۴۵ گیگ (۹۹ هزار تومان) | ووکامرس: 5532</option>
+                        <option value="5533" data-bot="16" data-price="159000">یک‌ماهه | ۷۰ گیگ (۱۵۹ هزار تومان) | ووکامرس: 5533</option>
+                        <option value="5534" data-bot="17" data-price="199000">یک‌ماهه | ۱۰۰ گیگ (۱۹۹ هزار تومان) | ووکامرس: 5534</option>
+                        <option value="5535" data-bot="18" data-price="269000">یک‌ماهه | ۱۵۰ گیگ (۲۶۹ هزار تومان) | ووکامرس: 5535</option>
+                    </optgroup>
+                    <!-- پلن‌های دوماهه -->
+                    <optgroup label="💖 پلن‌های دوماهه">
+                        <option value="6290" data-bot="27" data-price="225000">دوماهه | ۹۰ گیگ (۲۲۵ هزار تومان) | ووکامرس: 6290</option>
+                        <option value="6291" data-bot="28" data-price="300000">دوماهه | ۱۵۰ گیگ (۳۰۰ هزار تومان) | ووکامرس: 6291</option>
+                        <option value="6292" data-bot="29" data-price="360000">دوماهه | ۲۰۰ گیگ (۳۶۰ هزار تومان) | ووکامرس: 6292</option>
+                        <option value="6293" data-bot="30" data-price="480000">دوماهه | ۳۰۰ گیگ (۴۸۰ هزار تومان) | ووکامرس: 6293</option>
+                    </optgroup>
+                    <!-- پلن‌های سه‌ماهه -->
+                    <optgroup label="💖 پلن‌های سه‌ماهه">
+                        <option value="5536" data-bot="19" data-price="290000">سه‌ماهه | ۱۰۰ گیگ (۲۹۰ هزار تومان) | ووکامرس: 5536</option>
+                        <option value="5538" data-bot="20" data-price="460000">سه‌ماهه | ۲۰۰ گیگ (۴۶0 هزار تومان) | ووکامرس: 5538</option>
+                        <option value="5540" data-bot="21" data-price="600000">سه‌ماهه | ۳۰۰ گیگ (۶۰۰ هزار تومان) | ووکامرس: 5540</option>
+                        <option value="5541" data-bot="25" data-price="1200000">سه‌ماهه | ۵۰۰ گیگ (۱,۲۰۰ هزار تومان) | ووکامرس: 5541</option>
+                    </optgroup>
+                    <!-- پلن‌های شش‌ماهه -->
+                    <optgroup label="💖 پلن‌های شش‌ماهه">
+                        <option value="5542" data-bot="23" data-price="610000">شش‌ماهه | ۲۰۰ گیگ (۶۱۰ هزار تومان) | ووکامرس: 5542</option>
+                        <option value="5543" data-bot="24" data-price="910000">شش‌ماهه | ۳۵۰ گیگ (۹۱۰ هزار تومان) | ووکامرس: 5543</option>
+                        <option value="5544" data-bot="25" data-price="1200000">شش‌ماهه | ۴۰۰ گیگ (۱,۲۰۰ هزار تومان) | ووکامرس: 5544</option>
+                        <option value="5546" data-bot="26" data-price="1600000">شش‌ماهه | ۸۰۰ گیگ (۱,۶۰۰ هزار تومان) | ووکامرس: 5546</option>
+                    </optgroup>
+                    <!-- پلن‌های دوازده‌ماهه -->
+                    <optgroup label="💖 پلن‌های دوازده‌ماهه">
+                        <option value="19231" data-bot="31" data-price="1200000">دوازده‌ماهه | ۴۰۰ گیگ (۱,۲۰۰ هزار تومان) | ووکامرس: 19231</option>
+                        <option value="19232" data-bot="32" data-price="2240000">دوازده‌ماهه | ۸۰۰ گیگ (۲,۲۴۰ هزار تومان) | ووکامرس: 19232</option>
+                        <option value="19233" data-bot="33" data-price="3000000">دوازده‌ماهه | ۱۲۰۰ گیگ (۳,۰۰۰ هزار تومان) | ووکامرس: 19233</option>
+                        <option value="19234" data-bot="34" data-price="3800000">دوازده‌ماهه | ۱۹۰۰ گیگ (۳,۸۰۰ هزار تومان) | ووکامرس: 19234</option>
+                    </optgroup>
+                </select>
+                <input type="number" id="planCount" class="input-count" value="300" min="1" placeholder="تعداد">
+            </div>
+            <div class="btn-row">
+                <button class="btn-gen" onclick="generateCodesAsync('plan')" style="grid-column: span 2;">🚀 تولید کدها</button>
+                <button class="btn-util" onclick="copyData('plan')">📋 کپی</button>
+                <button class="btn-util" onclick="downloadData('plan', 'txt')">📄 دانلود TXT</button>
+                <button class="btn-util" onclick="downloadData('plan', 'csv')" style="color: #10b981; border-color: #10b981;">📊 اکسل CSV</button>
+            </div>
+            <div id="output-plan" class="output-box">آماده‌ی تولید...</div>
+        </div>
+    </div>
+
+    <div id="tab-wallet" class="tab-content">
+        <div class="card">
+            <div class="card-title">
+                <span>💰 تولید عمده شارژ کیف پول</span>
+                <button class="btn-util btn-small" onclick="clearBox('output-wallet')">🧹 پاک کردن کادر</button>
+            </div>
+            <div class="form-group">
+                <select id="walletAmount">
+                    <option value="200000" data-woo="4323">شارژ ۲۰۰,۰۰۰ تومانی (کد محصول: 4323)</option>
+                    <option value="500000" data-woo="3496" selected>شارژ ۵۰۰,۰۰۰ تومانی (کد محصول: 3496)</option>
+                    <option value="1000000" data-woo="4325">شارژ ۱,۰۰۰,۰۰۰ تومانی (کد محصول: 4325)</option>
+                </select>
+                <input type="number" id="walletCount" class="input-count" value="300" min="1" placeholder="تعداد">
+            </div>
+            <div class="btn-row">
+                <button class="btn-gen-wallet" onclick="generateCodesAsync('wallet')" style="grid-column: span 2;">🚀 تولید کدهای شارژ</button>
+                <button class="btn-util" onclick="copyData('wallet')">📋 کپی</button>
+                <button class="btn-util" onclick="downloadData('wallet', 'txt')">📄 دانلود TXT</button>
+                <button class="btn-util" onclick="downloadData('wallet', 'csv')" style="color: #eab308; border-color: #eab308;">📊 اکسل CSV</button>
+            </div>
+            <div id="output-wallet" class="output-box" style="color: #eab308;">آماده‌ی تولید کدهای کیف پول...</div>
+        </div>
+    </div>
+
+    <div id="tab-verify" class="tab-content">
+        <div class="card">
+            <div class="card-title">
+                <span>🔍 صحت‌سنجی و بررسی هوشمند (Smart Decode)</span>
+                <button class="btn-util btn-small" onclick="clearVerify()">🧹 پاک کردن همه‌چیز</button>
+            </div>
+            <p style="font-size: 12px; margin-top:-5px; color: var(--text-muted);">کدهای خود را (حتی صدها کد با هم) اینجا پیست کنید.</p>
+            
+            <textarea id="verifyInput" placeholder="کدها را اینجا وارد کنید (هر کد در یک خط)..."></textarea>
+            <button class="btn-verify" onclick="verifyBatch()">شروع بررسی کـدها</button>
+            
+            <div class="filter-row" id="verifyFilters" style="display: none;">
+                <button class="btn-util btn-small" onclick="filterTable('all')">👁️ نمایش همه</button>
+                <button class="btn-util btn-small" onclick="filterTable('valid')" style="color: #10b981; border-color:#10b981;">✅ فقط معتبرها</button>
+                <button class="btn-util btn-small" onclick="filterTable('fake')" style="color: #ef4444; border-color:#ef4444;">❌ فقط فیک‌ها</button>
+                <div style="flex-grow: 1;"></div>
+                <button class="btn-util btn-small" onclick="copyValidCodes()" style="background: var(--primary); color:white; border:none;">📋 کپی فقط کدهای سالم</button>
+            </div>
+
+            <div id="verifyTableContainer" class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ردیف</th>
+                            <th>کد اصلی</th>
+                            <th>نوع</th>
+                            <th>مشخصات (سایت / ربات)</th>
+                            <th>وضعیت</th>
+                        </tr>
+                    </thead>
+                    <tbody id="verifyTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="custom-toast">پیام</div>
+
+<div id="progress-overlay">
+    <div class="progress-box">
+        <h3 id="progress-text" style="margin:0; color:var(--text-main);">در حال تولید...</h3>
+        <div class="progress-bar-container">
+            <div id="progress-bar" class="progress-bar"></div>
+        </div>
     </div>
 </div>
 
 <script>
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    // دیتابیس کامل با قیمت و شناسه‌ها برای دیکود
+    const plansDB = {
+        "15": { type: "پلن", name: "یک‌ماهه | ۴۵ گیگ", woo: "5532", price: "99,000" },
+        "16": { type: "پلن", name: "یک‌ماهه | ۷۰ گیگ", woo: "5533", price: "159,000" },
+        "17": { type: "پلن", name: "یک‌ماهه | ۱۰۰ گیگ", woo: "5534", price: "199,000" },
+        "18": { type: "پلن", name: "یک‌ماهه | ۱۵۰ گیگ", woo: "5535", price: "269,000" },
+        "27": { type: "پلن", name: "دوماهه | ۹۰ گیگ", woo: "6290", price: "225,000" },
+        "28": { type: "پلن", name: "دوماهه | ۱۵۰ گیگ", woo: "6291", price: "300,000" },
+        "29": { type: "پلن", name: "دوماهه | ۲۰۰ گیگ", woo: "6292", price: "360,000" },
+        "30": { type: "پلن", name: "دوماهه | ۳۰۰ گیگ", woo: "6293", price: "480,000" },
+        "19": { type: "پلن", name: "سه‌ماهه | ۱۰۰ گیگ", woo: "5536", price: "290,000" },
+        "20": { type: "پلن", name: "سه‌ماهه | ۲۰۰ گیگ", woo: "5538", price: "460,000" },
+        "21": { type: "پلن", name: "سه‌ماهه | ۳۰۰ گیگ", woo: "5540", price: "600,000" },
+        "25": { type: "پلن", name: "سه‌ماهه ۵۰۰G / شش‌ماهه ۴۰۰G", woo: "5541/5544", price: "1,200,000" },
+        "23": { type: "پلن", name: "شش‌ماهه | ۲۰۰ گیگ", woo: "5542", price: "610,000" },
+        "24": { type: "پلن", name: "شش‌ماهه | ۳۵۰ گیگ", woo: "5543", price: "910,000" },
+        "26": { type: "پلن", name: "شش‌ماهه | ۸۰۰ گیگ", woo: "5546", price: "1,600,000" },
+        "31": { type: "پلن", name: "دوازده‌ماهه | ۴۰۰ گیگ", woo: "19231", price: "1,200,000" },
+        "32": { type: "پلن", name: "دوازده‌ماهه | ۸۰۰ گیگ", woo: "19232", price: "2,240,000" },
+        "33": { type: "پلن", name: "دوازده‌ماهه | ۱۲۰۰ گیگ", woo: "19233", price: "3,000,000" },
+        "34": { type: "پلن", name: "دوازده‌ماهه | ۱۹۰۰ گیگ", woo: "19234", price: "3,800,000" }
+    };
 
-    function generate() {
-        const p = document.getElementById('planNum').value;
-        if(!p) return alert("شماره پلن الزامی است! 😊");
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789'; // حذف O, 0, 1, l, I برای خوانایی
 
-        let res = [];
-        for(let i=0; i<300; i++) {
-            let r = '';
-            for(let j=0; j<3; j++) r += chars.charAt(Math.floor(Math.random() * chars.length));
-            let raw = r + "-" + p + "-1";
-            let b64 = btoa(raw).replace(/=/g, '');
-            res.push(b64);
-        }
-        document.getElementById('output').innerText = res.join('\n');
+    let globalValidCodesList = []; // نگهداری موقت کدهای سالم هنگام دیکود
+
+    window.onload = function() {
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        if (savedTheme === 'light') toggleTheme(true);
+
+        const savedPlan = localStorage.getItem('lastPlanCodes');
+        if (savedPlan) document.getElementById('output-plan').innerText = savedPlan;
+
+        const savedWallet = localStorage.getItem('lastWalletCodes');
+        if (savedWallet) document.getElementById('output-wallet').innerText = savedWallet;
+
+        loadDashboardStats();
+        loadHistoryTable();
     }
 
-    function verify() {
-        let code = document.getElementById('verifyInput').value.trim();
-        const resDiv = document.getElementById('verifyResult');
-        try {
-            while (code.length % 4 !== 0) code += '=';
-            let decoded = atob(code);
-            resDiv.innerHTML = `محتوای کد: <span style="color:#818cf8">${decoded}</span>`;
-            resDiv.style.borderColor = "#059669";
-        } catch(e) {
-            resDiv.innerHTML = "❌ کد نامعتبر!";
-            resDiv.style.borderColor = "#ef4444";
-        }
+    function showMsg(text, isError = false) {
+        const toast = document.getElementById('custom-toast');
+        toast.innerText = text;
+        toast.style.background = isError ? 'var(--danger)' : 'var(--success)';
+        toast.classList.add('toast-visible');
+        setTimeout(() => toast.classList.remove('toast-visible'), 3000);
     }
 
-    function copy() {
-        const t = document.getElementById('output').innerText;
-        navigator.clipboard.writeText(t).then(() => alert("کپی شد! ✅"));
-    }
-
-    function download() {
-        const content = document.getElementById('output').innerText;
-        const plan = document.getElementById('planNum').value || 'none';
+    function toggleTheme(forceLight = false) {
+        const body = document.body;
+        const btn = document.getElementById('themeBtn');
+        const isDark = body.getAttribute('data-theme') === 'dark';
         
-        if (content.includes("نمایش داده می‌شوند")) {
-            alert("اول کدها رو بساز رفیق! 😊");
-            return;
+        if (isDark || forceLight) {
+            body.setAttribute('data-theme', 'light');
+            btn.innerText = '🌙 تم تاریک';
+            localStorage.setItem('theme', 'light');
+        } else {
+            body.setAttribute('data-theme', 'dark');
+            btn.innerText = '☀️ تم روشن';
+            localStorage.setItem('theme', 'dark');
+        }
+    }
+
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        
+        document.getElementById(tabId).classList.add('active');
+        event.currentTarget.classList.add('active');
+    }
+
+    function clearBox(id) {
+        document.getElementById(id).innerText = "آماده...";
+        localStorage.removeItem(id === 'output-plan' ? 'lastPlanCodes' : 'lastWalletCodes');
+        showMsg("پاکسازی شد 🧹");
+    }
+
+    function clearVerify() {
+        document.getElementById('verifyInput').value = '';
+        document.getElementById('verifyTableBody').innerHTML = '';
+        document.getElementById('verifyTableContainer').style.display = 'none';
+        document.getElementById('verifyFilters').style.display = 'none';
+        globalValidCodesList = [];
+        showMsg("فرم پاک شد 🧹");
+    }
+
+    function getRandChars(len) {
+        let r = '';
+        for(let j=0; j<len; j++) r += chars.charAt(Math.floor(Math.random() * chars.length));
+        return r;
+    }
+
+    async function generateCodesAsync(type) {
+        const countInput = document.getElementById(type === 'plan' ? 'planCount' : 'walletCount');
+        let count = parseInt(countInput.value) || 300;
+        if (count < 1) return showMsg("تعداد نامعتبر است!", true);
+
+        const selectEl = document.getElementById(type === 'plan' ? 'planSelect' : 'walletAmount');
+        const optionEl = selectEl.options[selectEl.selectedIndex];
+        
+        const overlay = document.getElementById('progress-overlay');
+        const bar = document.getElementById('progress-bar');
+        const pText = document.getElementById('progress-text');
+        overlay.classList.add('active');
+        bar.style.width = '0%';
+        pText.innerText = `در حال تولید ${count} کد...`;
+
+        let resultCodes = [];
+        let chunkSize = 500;
+        let totalValueGenerated = 0;
+
+        for (let i = 0; i < count; i += chunkSize) {
+            await new Promise(resolve => setTimeout(resolve, 10));
+            
+            let end = Math.min(i + chunkSize, count);
+            for (let j = i; j < end; j++) {
+                let raw = "";
+                if (type === 'plan') {
+                    const botCode = optionEl.getAttribute('data-bot');
+                    const price = parseInt(optionEl.getAttribute('data-price'));
+                    totalValueGenerated += price;
+                    raw = getRandChars(3) + "-" + botCode + "-1";
+                } else {
+                    const amountToman = parseInt(optionEl.value);
+                    const amountRial = amountToman * 10;
+                    totalValueGenerated += amountToman;
+                    raw = getRandChars(5) + "-0-" + amountRial;
+                }
+                let b64 = btoa(raw).replace(/=/g, '');
+                resultCodes.push(b64);
+            }
+            bar.style.width = ((end / count) * 100) + '%';
+        }
+
+        const outText = resultCodes.join('\n');
+        document.getElementById(`output-${type}`).innerText = outText;
+        localStorage.setItem(type === 'plan' ? 'lastPlanCodes' : 'lastWalletCodes', outText);
+
+        // Update Stats & History
+        updateDashboardStats(type, count, totalValueGenerated);
+        addHistoryRecord(type, optionEl.text, count, outText);
+
+        setTimeout(() => { 
+            overlay.classList.remove('active');
+            showMsg(`✅ ${count} کد با موفقیت تولید شد.`);
+        }, 300);
+    }
+
+    function copyData(type) {
+        const t = document.getElementById(`output-${type}`).innerText;
+        if (!t || t.includes("آماده")) return showMsg("چیزی برای کپی نیست!", true);
+        
+        const ta = document.createElement("textarea");
+        ta.value = t; ta.style.position = "fixed"; ta.style.opacity = "0";
+        document.body.appendChild(ta); ta.select();
+        try { document.execCommand('copy'); showMsg("کپی شد! ✅"); } 
+        catch (e) { showMsg("خطا در کپی!", true); }
+        document.body.removeChild(ta);
+    }
+
+    function downloadData(type, format, contentStr = null, prefix = 'export') {
+        if (!contentStr) contentStr = document.getElementById(`output-${type}`).innerText;
+        if (contentStr.includes("آماده")) return showMsg("اول کدها را تولید کنید!", true);
+
+        const arr = contentStr.split('\n');
+        let finalContent = "";
+        let mimeType = format === 'csv' ? 'text/csv;charset=utf-8;' : 'text/plain';
+        let extension = format;
+
+        if (format === 'csv') {
+            finalContent = "\uFEFFردیف,نوع,مشخصات,کد\n"; 
+            let detail = type === 'plan' ? "اشتراک" : "کیف پول";
+            arr.forEach((code, index) => {
+                finalContent += `${index + 1},${type === 'plan'?'پلن':'شارژ'},${detail},${code}\n`;
+            });
+        } else {
+            finalContent = contentStr;
         }
 
         const element = document.createElement('a');
-        const file = new Blob([content], {type: 'text/plain'});
+        const file = new Blob([finalContent], {type: mimeType});
         element.href = URL.createObjectURL(file);
-        element.download = `plan-${plan}-codes.txt`;
+        element.download = `${prefix}-${Date.now()}.${extension}`;
         document.body.appendChild(element);
         element.click();
-        document.body.removeChild(element); // پاکسازی بعد از دانلود
+        document.body.removeChild(element);
+    }
+
+    function getTodayStr() {
+        return new Date().toLocaleDateString('fa-IR');
+    }
+
+    function loadDashboardStats() {
+        let stats = JSON.parse(localStorage.getItem('hamon_stats')) || { date: getTodayStr(), plans: 0, wallets: 0, value: 0 };
+        if (stats.date !== getTodayStr()) {
+            stats = { date: getTodayStr(), plans: 0, wallets: 0, value: 0 }; // Reset for new day
+        }
+        document.getElementById('stat-plans').innerText = stats.plans.toLocaleString();
+        document.getElementById('stat-wallets').innerText = stats.wallets.toLocaleString();
+        document.getElementById('stat-value').innerText = stats.value.toLocaleString();
+        document.getElementById('stat-date').innerText = "تاریخ: " + stats.date;
+        localStorage.setItem('hamon_stats', JSON.stringify(stats));
+    }
+
+    function updateDashboardStats(type, count, value) {
+        let stats = JSON.parse(localStorage.getItem('hamon_stats'));
+        if (type === 'plan') stats.plans += count;
+        if (type === 'wallet') stats.wallets += count;
+        stats.value += value;
+        localStorage.setItem('hamon_stats', JSON.stringify(stats));
+        loadDashboardStats();
+    }
+
+    function addHistoryRecord(type, detail, count, rawData) {
+        let history = JSON.parse(localStorage.getItem('hamon_history')) || [];
+        const record = {
+            id: Date.now(),
+            date: new Date().toLocaleString('fa-IR'),
+            type: type === 'plan' ? '🔑 پلن' : '💰 کیف پول',
+            detail: detail.split('|')[0], // کوتاه کردن نام
+            count: count,
+            data: rawData
+        };
+        history.unshift(record); // Add to top
+        if (history.length > 20) history.pop(); // Keep only last 20
+        localStorage.setItem('hamon_history', JSON.stringify(history));
+        loadHistoryTable();
+    }
+
+    function loadHistoryTable() {
+        let history = JSON.parse(localStorage.getItem('hamon_history')) || [];
+        const tbody = document.getElementById('historyTableBody');
+        tbody.innerHTML = '';
+        if (history.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">تاریخچه‌ای وجود ندارد.</td></tr>';
+            return;
+        }
+        history.forEach(h => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="font-size:11px; direction:ltr;">${h.date}</td>
+                <td>${h.type}</td>
+                <td style="font-size:11px;">${h.detail}</td>
+                <td>${h.count}</td>
+                <td>
+                    <button class="btn-util btn-small" onclick="downloadHistory(${h.id})">⬇️ دانلود TXT</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function downloadHistory(id) {
+        let history = JSON.parse(localStorage.getItem('hamon_history')) || [];
+        let record = history.find(h => h.id === id);
+        if(record) {
+            const formatType = record.type.includes('پلن') ? 'plan' : 'wallet';
+            downloadData(formatType, 'txt', record.data, 'history');
+        }
+    }
+
+    function clearHistory() {
+        if(confirm("آیا از پاک کردن کل تاریخچه اطمینان دارید؟")) {
+            localStorage.removeItem('hamon_history');
+            loadHistoryTable();
+            showMsg("تاریخچه پاک شد.");
+        }
+    }
+
+    function verifyBatch() {
+        const inputRaw = document.getElementById('verifyInput').value.trim();
+        if(!inputRaw) return showMsg("هیچ کدی وارد نشده است!", true);
+
+        const lines = inputRaw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+        const tbody = document.getElementById('verifyTableBody');
+        document.getElementById('verifyTableContainer').style.display = 'block';
+        document.getElementById('verifyFilters').style.display = 'flex';
+        tbody.innerHTML = ''; 
+        globalValidCodesList = []; // Reset valid codes list
+
+        lines.forEach((code, index) => {
+            let rowHtml = `<td>${index + 1}</td><td><span style="font-family:monospace;font-size:11px;color:var(--text-main);">${code}</span></td>`;
+            let isRowValid = false;
+
+            try {
+                let paddedCode = code;
+                while (paddedCode.length % 4 !== 0) paddedCode += '=';
+                let decoded = atob(paddedCode);
+                let parts = decoded.split('-');
+                
+                if (parts.length === 3) {
+                    let part1 = parts[1]; // Bot ID
+                    let part2 = parts[2]; // Price/Type
+                    
+                    if (part1 === '0') {
+                        // کیف پول
+                        let toman = parseInt(part2) / 10;
+                        let wooId = (toman === 200000) ? 4323 : (toman === 500000) ? 3496 : (toman === 1000000) ? 4325 : "ناشناس";
+                        rowHtml += `<td>💰 کیف پول</td>
+                                    <td>${toman.toLocaleString()} تومان<br><span style="font-size:11px;color:var(--text-muted)">محصول ووکامرس: ${wooId}</span></td>
+                                    <td class="status-ok">معتبر ✅</td>`;
+                        isRowValid = true;
+                    } else if (plansDB[part1] && part2 === '1') {
+                        // پلن اشتراک
+                        let pData = plansDB[part1];
+                        rowHtml += `<td>🔑 ${pData.type}</td>
+                                    <td>${pData.name}<br><span style="font-size:11px;color:var(--text-muted)">ووکامرس: ${pData.woo} | کد ربات: ${part1}</span></td>
+                                    <td class="status-ok">معتبر ✅</td>`;
+                        isRowValid = true;
+                    } else {
+                        rowHtml += `<td>❓ ناشناس</td><td>شناسه: ${part1}</td><td style="color:#eab308;font-weight:bold;">نیازمند بررسی ⚠️</td>`;
+                    }
+                } else {
+                     rowHtml += `<td>❌ نامعتبر</td><td>دستکاری شده</td><td class="status-bad">فیک ❌</td>`;
+                }
+            } catch(e) {
+                rowHtml += `<td>❌ نامعتبر</td><td>فرمت اشتباه</td><td class="status-bad">نامعتبر ❌</td>`;
+            }
+            
+            const tr = document.createElement('tr');
+            tr.innerHTML = rowHtml;
+            tr.setAttribute('data-status', isRowValid ? 'valid' : 'fake');
+            tbody.appendChild(tr);
+
+            if(isRowValid) globalValidCodesList.push(code);
+        });
+        showMsg("بررسی گروهی انجام شد.");
+    }
+
+    function filterTable(type) {
+        const rows = document.querySelectorAll('#verifyTableBody tr');
+        rows.forEach(row => {
+            if (type === 'all') {
+                row.classList.remove('hidden-row');
+            } else if (type === 'valid') {
+                if(row.getAttribute('data-status') === 'valid') row.classList.remove('hidden-row');
+                else row.classList.add('hidden-row');
+            } else if (type === 'fake') {
+                if(row.getAttribute('data-status') === 'fake') row.classList.remove('hidden-row');
+                else row.classList.add('hidden-row');
+            }
+        });
+    }
+
+    function copyValidCodes() {
+        if (globalValidCodesList.length === 0) return showMsg("هیچ کد معتبری یافت نشد!", true);
+        
+        const ta = document.createElement("textarea");
+        ta.value = globalValidCodesList.join('\n'); 
+        ta.style.position = "fixed"; ta.style.opacity = "0";
+        document.body.appendChild(ta); ta.select();
+        try { 
+            document.execCommand('copy'); 
+            showMsg(`تعداد ${globalValidCodesList.length} کد سالم کپی شد! ✅`); 
+        } catch (e) { showMsg("خطا در کپی!", true); }
+        document.body.removeChild(ta);
     }
 </script>
 
