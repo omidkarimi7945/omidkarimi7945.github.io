@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>پنل پیشرفته لایسنس و کیف پول | هامان سرور</title>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    
+    <style>
+        :root {
+            --primary: #4338ca;
+            --primary-hover: #3730a3;
+            --success: #059669;
+            --wallet: #ca8a04;
+            --danger: #ef4444;
+            --info: #0284c7;
+            --purple: #7c3aed;
+            --bg-gradient: radial-gradient(circle at top, #1e1b4b, #020617);
+            --container-bg: rgba(255, 255, 255, 0.03);
+            --card-bg: rgba(15, 23, 42, 0.7);
+            --text-main: #e2e8f0;
+            --text-muted: #818cf8;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --input-bg: #0f172a;
+            --input-border: #334155;
+            --output-bg: #000;
+            --table-header: rgba(67, 56, 202, 0.2);
+            --table-row-hover: rgba(255, 255, 255, 0.03);
+            --tab-active: rgba(99, 102, 241, 0.2);
+        }
+
+        [data-theme="light"] {
+            --bg-gradient: radial-gradient(circle at top, #f8fafc, #cbd5e1);
+            --container-bg: rgba(255, 255, 255, 0.9);
+            --card-bg: rgba(255, 255, 255, 1);
+            --text-main: #0f172a;
+            --text-muted: #4f46e5;
+            --border-color: #cbd5e1;
+            --input-bg: #f8fafc;
+            --input-border: #cbd5e1;
+            --output-bg: #f1f5f9;
+            --table-header: rgba(67, 56, 202, 0.1);
+            --table-row-hover: rgba(0, 0, 0, 0.02);
+            --tab-active: rgba(99, 102, 241, 0.15);
+        }
+
+        body {
+            font-family: Vazirmatn, sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            padding: 40px 10px;
+            margin: 0;
+            min-height: 100vh;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 880px;
+            background: var(--container-bg);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 25px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            position: relative;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .theme-toggle {
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            color: var(--text-main);
+            padding: 8px 15px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: 0.3s;
+            font-family: Vazirmatn;
+        }
+
+        .header-titles h1 { font-size: 20px; margin: 0 0 5px 0; text-align: center; }
+        .header-titles .subtitle { font-size: 13px; color: var(--text-muted); text-align: center; display: block; }
+
+        .tabs-nav {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-main);
+            padding: 10px 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-family: Vazirmatn;
+            font-weight: bold;
+            font-size: 13px;
+            transition: 0.2s;
+            white-space: nowrap;
+        }
+        
+        .tab-btn:hover { background: var(--table-row-hover); }
+        .tab-btn.active { background: var(--tab-active); color: var(--primary); border: 1px solid var(--primary); }
+        [data-theme="dark"] .tab-btn.active { color: #a5b4fc; border-color: #6366f1; }
+
+        .tab-content { display: none; animation: fadeIn 0.4s ease; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat-box {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            border-radius: 16px;
+            text-align: center;
+        }
+        .stat-box h3 { margin: 0 0 10px 0; font-size: 14px; color: var(--text-muted); }
+        .stat-box .val { font-size: 24px; font-weight: bold; color: var(--text-main); }
+        .stat-box .sub-val { font-size: 12px; color: var(--success); margin-top: 5px; display: block;}
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 18px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .card-title { font-size: 17px; margin: 0 0 15px 0; display: flex; align-items: center; justify-content: space-between; }
+
+        /* استایل ساب-تب‌ها برای تفکیک لیست‌ها بدون شلوغی */
+        .sub-tabs {
+            display: flex;
+            gap: 8px;
+            background: var(--input-bg);
+            padding: 6px;
+            border-radius: 14px;
+            margin-bottom: 18px;
+            border: 1px solid var(--border-color);
+            flex-wrap: wrap;
+        }
+
+        .sub-tab-btn {
+            flex: 1;
+            min-width: 140px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: none;
+            background: transparent;
+            color: var(--text-main);
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+
+        .sub-tab-btn:hover { background: rgba(255, 255, 255, 0.05); }
+        .sub-tab-btn.active-sub-main { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(67, 56, 202, 0.4); }
+        .sub-tab-btn.active-sub-data { background: var(--info); color: white; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.4); }
+        .sub-tab-btn.active-sub-wg { background: var(--purple); color: white; box-shadow: 0 4px 12px rgba(124, 58, 237, 0.4); }
+
+        .form-group { display: flex; gap: 10px; margin-bottom: 15px; }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 14px;
+            border-radius: 12px;
+            border: 2px solid var(--input-border);
+            background: var(--input-bg);
+            color: var(--text-main);
+            font-family: Vazirmatn, monospace;
+            box-sizing: border-box;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); }
+        .input-count { width: 120px; text-align: center; }
+        textarea { resize: vertical; min-height: 120px; direction: ltr; }
+
+        .btn-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; }
+        
+        button {
+            padding: 12px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-family: Vazirmatn;
+            font-weight: bold;
+            font-size: 14px;
+            transition: 0.2s;
+            display: inline-flex; justify-content: center; align-items: center; gap: 5px;
+        }
+        button:hover { filter: brightness(1.1); transform: translateY(-1px); }
+        button:active { transform: scale(0.97); }
+
+        .btn-gen { background: var(--primary); color: white; }
+        .btn-gen-data { background: var(--info); color: white; }
+        .btn-gen-wg { background: var(--purple); color: white; }
+        .btn-gen-wallet { background: var(--wallet); color: white; }
+        .btn-util { background: var(--input-bg); color: var(--text-main); border: 1px solid var(--border-color); }
+        .btn-verify { background: var(--success); color: white; width: 100%; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-small { padding: 6px 12px; font-size: 12px; border-radius: 8px; }
+
+        .output-box {
+            background: var(--output-bg);
+            padding: 15px;
+            border-radius: 12px;
+            height: 150px;
+            overflow-y: auto;
+            direction: ltr;
+            color: #10b981;
+            font-family: monospace;
+            margin-top: 15px;
+            white-space: pre-wrap;
+            border: 1px solid var(--input-border);
+            font-size: 13px;
+        }
+
+        .filter-row { display: flex; gap: 10px; margin: 15px 0; flex-wrap: wrap; }
+        
+        .table-container { overflow-x: auto; border-radius: 12px; border: 1px solid var(--border-color); display: none; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: right; }
+        th, td { padding: 12px; border-bottom: 1px solid var(--border-color); }
+        th { background: var(--table-header); font-weight: bold; }
+        tr:last-child td { border-bottom: none; }
+        tr:hover { background: var(--table-row-hover); }
+        
+        .status-ok { color: #10b981; font-weight: bold; }
+        .status-bad { color: #ef4444; font-weight: bold; }
+        .hidden-row { display: none !important; }
+
+        /* مودال تایید اختصاصی به جای confirm() */
+        .modal-backdrop {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+            display: none; justify-content: center; align-items: center; z-index: 3000;
+        }
+        .modal-card {
+            background: var(--card-bg); border: 1px solid var(--border-color);
+            padding: 25px; border-radius: 18px; max-width: 350px; width: 90%; text-align: center;
+        }
+
+        #custom-toast {
+            position: fixed; bottom: -60px; left: 50%; transform: translateX(-50%);
+            background: #10b981; color: white; padding: 12px 24px; border-radius: 12px;
+            font-weight: bold; z-index: 1000; transition: bottom 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5); font-size: 14px;
+        }
+        .toast-visible { bottom: 30px !important; }
+
+        #progress-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); backdrop-filter: blur(5px);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 2000; opacity: 0; pointer-events: none; transition: 0.3s;
+        }
+        #progress-overlay.active { opacity: 1; pointer-events: all; }
+        .progress-box { background: var(--card-bg); padding: 30px; border-radius: 20px; width: 300px; text-align: center; border: 1px solid var(--border-color); }
+        .progress-bar-container { width: 100%; height: 10px; background: var(--input-bg); border-radius: 10px; margin-top: 20px; overflow: hidden; }
+        .progress-bar { height: 100%; width: 0%; background: #10b981; transition: width 0.1s; }
+
+        @media (max-width: 600px) {
+            .btn-row { grid-template-columns: 1fr 1fr; }
+            .form-group { flex-direction: column; }
+            .input-count { width: 100%; }
+        }
+    </style>
+</head>
+<body data-theme="dark">
+
+<div class="container">
+    <div class="header-top">
+        <button class="theme-toggle" onclick="toggleTheme()" id="themeBtn">☀️ تم روشن</button>
+        <div class="header-titles">
+            <h1>مدیریت یکپارچه لایسنس و کیف پول</h1>
+            <span class="subtitle">هامان سرور | نسخه ۳.۵ (Multi-List Edition)</span>
+        </div>
+        <div style="width: 85px;"></div>
+    </div>
+
+    <!-- منوی اصلی تب‌ها -->
+    <div class="tabs-nav">
+        <button class="tab-btn active" onclick="switchTab('tab-dashboard', this)">📊 داشبورد و تاریخچه</button>
+        <button class="tab-btn" onclick="switchTab('tab-plan', this)">🔑 تولید پلن‌ها (۳ لیست مجزا)</button>
+        <button class="tab-btn" onclick="switchTab('tab-wallet', this)">💰 تولید کیف پول</button>
+        <button class="tab-btn" onclick="switchTab('tab-verify', this)">🔍 صحت‌سنجی هوشمند</button>
+    </div>
+
+    <!-- تب داشبورد -->
+    <div id="tab-dashboard" class="tab-content active">
+        <div class="stats-grid">
+            <div class="stat-box">
+                <h3>پلن‌های ساخته شده امروز</h3>
+                <div class="val" id="stat-plans">0</div>
+            </div>
+            <div class="stat-box">
+                <h3>کدهای کیف پول امروز</h3>
+                <div class="val" id="stat-wallets">0</div>
+            </div>
+            <div class="stat-box">
+                <h3>ارزش کل تولیدی امروز (تومان)</h3>
+                <div class="val" id="stat-value" style="color: #10b981;">0</div>
+                <span class="sub-val" id="stat-date"></span>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">
+                <span>🕒 تاریخچه تولید (ذخیره در مرورگر)</span>
+                <button class="btn-util btn-small" onclick="openClearModal()">🗑️ پاکسازی تاریخچه</button>
+            </div>
+            <div style="overflow-x: auto; border: 1px solid var(--border-color); border-radius: 12px;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>تاریخ و ساعت</th>
+                            <th>نوع</th>
+                            <th>مشخصات</th>
+                            <th>تعداد</th>
+                            <th>عملیات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody">
+                        <tr><td colspan="5" style="text-align:center;">تاریخچه‌ای وجود ندارد.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- تب تولید پلن‌ها با ۳ لیست تفکیک‌شده -->
+    <div id="tab-plan" class="tab-content">
+        <div class="card">
+            <div class="card-title">
+                <span id="planCardTitle">🔑 ساخت عمده کد اشتراک (سرویس‌های اصلی)</span>
+                <button class="btn-util btn-small" onclick="clearBox('output-plan')">🧹 پاک کردن کادر</button>
+            </div>
+
+            <!-- دکمه‌های انتخاب لیست برای جلوگیری از شلوغی -->
+            <div class="sub-tabs">
+                <button id="subBtn-main" class="sub-tab-btn active-sub-main" onclick="switchPlanCategory('main')">
+                    🌐 اشتراک‌های اصلی (۱ تا ۱۲ ماهه)
+                </button>
+                <button id="subBtn-data" class="sub-tab-btn" onclick="switchPlanCategory('data')">
+                    ➕ افزایش حجم (Data)
+                </button>
+                <button id="subBtn-wg" class="sub-tab-btn" onclick="switchPlanCategory('wg')">
+                    🛡️ وایرگارد (OpenVPN + WG)
+                </button>
+            </div>
+
+            <div class="form-group">
+                <!-- لیست ۱: اشتراک‌های اصلی -->
+                <select id="planSelect-main" class="plan-selector">
+                    <optgroup label="💖 پلن‌های یک‌ماهه">
+                        <option value="5532" data-bot="15" data-price="99000">یک‌ماهه | ۴۵ گیگ (۹۹,۰۰۰ تومان) | کد ربات: 15</option>
+                        <option value="5533" data-bot="16" data-price="159000">یک‌ماهه | ۷۰ گیگ (۱۵۹,۰۰۰ تومان) | کد ربات: 16</option>
+                        <option value="5534" data-bot="17" data-price="199000">یک‌ماهه | ۱۰۰ گیگ (۱۹۹,۰۰۰ تومان) | کد ربات: 17</option>
+                        <option value="5535" data-bot="18" data-price="269000">یک‌ماهه | ۱۵۰ گیگ (۲۶۹,۰۰۰ تومان) | کد ربات: 18</option>
+                    </optgroup>
+                    <optgroup label="💖 پلن‌های دوماهه">
+                        <option value="6290" data-bot="27" data-price="225000">دوماهه | ۹۰ گیگ (۲۲۵,۰۰۰ تومان) | کد ربات: 27</option>
+                        <option value="6291" data-bot="28" data-price="300000">دوماهه | ۱۵۰ گیگ (۳۰۰,۰۰۰ تومان) | کد ربات: 28</option>
+                        <option value="6292" data-bot="29" data-price="360000">دوماهه | ۲۰۰ گیگ (۳۶۰,۰۰۰ تومان) | کد ربات: 29</option>
+                        <option value="6293" data-bot="30" data-price="480000">دوماهه | ۳۰۰ گیگ (۴۸۰,۰۰۰ تومان) | کد ربات: 30</option>
+                    </optgroup>
+                    <optgroup label="💖 پلن‌های سه‌ماهه">
+                        <option value="5536" data-bot="19" data-price="290000">سه‌ماهه | ۱۰۰ گیگ (۲۹۰,۰۰۰ تومان) | کد ربات: 19</option>
+                        <option value="5538" data-bot="20" data-price="460000">سه‌ماهه | ۲۰۰ گیگ (۴۶۰,۰۰۰ تومان) | کد ربات: 20</option>
+                        <option value="5540" data-bot="21" data-price="600000">سه‌ماهه | ۳۰۰ گیگ (۶۰۰,۰۰۰ تومان) | کد ربات: 21</option>
+                        <option value="5541" data-bot="25" data-price="1200000">سه‌ماهه | ۵۰۰ گیگ (۱,۲۰۰,۰۰۰ تومان) | کد ربات: 25</option>
+                    </optgroup>
+                    <optgroup label="💖 پلن‌های شش‌ماهه">
+                        <option value="5542" data-bot="23" data-price="610000">شش‌ماهه | ۲۰۰ گیگ (۶۱۰,۰۰۰ تومان) | کد ربات: 23</option>
+                        <option value="5543" data-bot="24" data-price="910000">شش‌ماهه | ۳۵۰ گیگ (۹۱۰,۰۰۰ تومان) | کد ربات: 24</option>
+                        <option value="5544" data-bot="25" data-price="1200000">شش‌ماهه | ۴۰۰ گیگ (۱,۲۰۰,۰۰۰ تومان) | کد ربات: 25</option>
+                        <option value="5546" data-bot="26" data-price="1600000">شش‌ماهه | ۸۰۰ گیگ (۱,۶۰۰,۰۰۰ تومان) | کد ربات: 26</option>
+                    </optgroup>
+                    <optgroup label="💖 پلن‌های دوازده‌ماهه">
+                        <option value="19231" data-bot="31" data-price="1200000">دوازده‌ماهه | ۴۰۰ گیگ (۱,۲۰۰,۰۰۰ تومان) | کد ربات: 31</option>
+                        <option value="19232" data-bot="32" data-price="2240000">دوازده‌ماهه | ۸۰۰ گیگ (۲,۲۴۰,۰۰۰ تومان) | کد ربات: 32</option>
+                        <option value="19233" data-bot="33" data-price="3000000">دوازده‌ماهه | ۱۲۰۰ گیگ (۳,۰۰۰,۰۰۰ تومان) | کد ربات: 33</option>
+                        <option value="19234" data-bot="34" data-price="3800000">دوازده‌ماهه | ۱۹۰۰ گیگ (۳,۸۰۰,۰۰۰ تومان) | کد ربات: 34</option>
+                    </optgroup>
+                </select>
+
+                <!-- لیست ۲: افزایش حجم (Data) -->
+                <select id="planSelect-data" class="plan-selector" style="display: none;">
+                    <optgroup label="➕ بسته‌های افزایش حجم (بدون محدودیت زمانی)">
+                        <option value="data_20" data-bot="31" data-price="59000">افزایش حجم | ۲۰ گیگ | ۵۹,۰۰۰ تومان | کد ربات: #31</option>
+                        <option value="data_50" data-bot="32" data-price="147000">افزایش حجم | ۵۰ گیگ | ۱۴۷,۰۰۰ تومان | کد ربات: #32</option>
+                        <option value="data_100" data-bot="33" data-price="297000">افزایش حجم | ۱۰۰ گیگ | ۲۹۷,۰۰۰ تومان | کد ربات: #33</option>
+                        <option value="data_200" data-bot="34" data-price="549000">افزایش حجم | ۲۰۰ گیگ | ۵۴۹,۰۰۰ تومان | کد ربات: #34</option>
+                    </optgroup>
+                </select>
+
+                <!-- لیست ۳: وایرگارد (OpenVPN + WireGuard) -->
+                <select id="planSelect-wg" class="plan-selector" style="display: none;">
+                    <optgroup label="🛡️ سرویس‌های OpenVPN + WireGuard (یک‌ماهه)">
+                        <option value="1820" data-bot="49" data-price="199000">وایرگارد ۱ ماهه | ۳۰ گیگ | ۱۹۹,۰۰۰ تومان | کد ربات: #49 (محصول: 1820)</option>
+                        <option value="1920" data-bot="50" data-price="630000">وایرگارد ۱ ماهه | ۱۰۰ گیگ | ۶۳۰,۰۰۰ تومان | کد ربات: #50 (محصول: 1920)</option>
+                        <option value="2020" data-bot="51" data-price="898000">وایرگارد ۱ ماهه | ۱۵۰ گیگ | ۸۹۸,۰۰۰ تومان | کد ربات: #51 (محصول: 2020)</option>
+                        <option value="2120" data-bot="52" data-price="1137000">وایرگارد ۱ ماهه | ۲۰۰ گیگ | ۱,۱۳۷,۰۰۰ تومان | کد ربات: #52 (محصول: 2120)</option>
+                    </optgroup>
+                </select>
+
+                <input type="number" id="planCount" class="input-count" value="300" min="1" placeholder="تعداد">
+            </div>
+
+            <div class="btn-row">
+                <button id="btnGenPlan" class="btn-gen" onclick="generateCodesAsync('plan')" style="grid-column: span 2;">🚀 تولید کدها</button>
+                <button class="btn-util" onclick="copyData('plan')">📋 کپی</button>
+                <button class="btn-util" onclick="downloadData('plan', 'txt')">📄 دانلود TXT</button>
+                <button class="btn-util" onclick="downloadData('plan', 'csv')" style="color: #10b981; border-color: #10b981;">📊 اکسل CSV</button>
+            </div>
+            <div id="output-plan" class="output-box">آماده‌ی تولید...</div>
+        </div>
+    </div>
+
+    <!-- تب کیف پول -->
+    <div id="tab-wallet" class="tab-content">
+        <div class="card">
+            <div class="card-title">
+                <span>💰 تولید عمده شارژ کیف پول</span>
+                <button class="btn-util btn-small" onclick="clearBox('output-wallet')">🧹 پاک کردن کادر</button>
+            </div>
+            <div class="form-group">
+                <select id="walletAmount">
+                    <option value="200000" data-woo="4323">شارژ ۲۰۰,۰۰۰ تومانی (کد محصول: 4323)</option>
+                    <option value="500000" data-woo="3496" selected>شارژ ۵۰۰,۰۰۰ تومانی (کد محصول: 3496)</option>
+                    <option value="1000000" data-woo="4325">شارژ ۱,۰۰۰,۰۰۰ تومانی (کد محصول: 4325)</option>
+                </select>
+                <input type="number" id="walletCount" class="input-count" value="300" min="1" placeholder="تعداد">
+            </div>
+            <div class="btn-row">
+                <button class="btn-gen-wallet" onclick="generateCodesAsync('wallet')" style="grid-column: span 2;">🚀 تولید کدهای شارژ</button>
+                <button class="btn-util" onclick="copyData('wallet')">📋 کپی</button>
+                <button class="btn-util" onclick="downloadData('wallet', 'txt')">📄 دانلود TXT</button>
+                <button class="btn-util" onclick="downloadData('wallet', 'csv')" style="color: #eab308; border-color: #eab308;">📊 اکسل CSV</button>
+            </div>
+            <div id="output-wallet" class="output-box" style="color: #eab308;">آماده‌ی تولید کدهای کیف پول...</div>
+        </div>
+    </div>
+
+    <!-- تب صحت‌سنجی -->
+    <div id="tab-verify" class="tab-content">
+        <div class="card">
+            <div class="card-title">
+                <span>🔍 صحت‌سنجی و بررسی هوشمند (Smart Decode)</span>
+                <button class="btn-util btn-small" onclick="clearVerify()">🧹 پاک کردن همه‌چیز</button>
+            </div>
+            <p style="font-size: 12px; margin-top:-5px; color: var(--text-muted);">کدهای خود را (اشتراک، افزایش حجم، وایرگارد یا کیف پول) اینجا پیست کنید تا رمزگشایی شوند.</p>
+            
+            <textarea id="verifyInput" placeholder="کدها را اینجا وارد کنید (هر کد در یک خط)..."></textarea>
+            <button class="btn-verify" onclick="verifyBatch()">شروع بررسی کـدها</button>
+            
+            <div class="filter-row" id="verifyFilters" style="display: none;">
+                <button class="btn-util btn-small" onclick="filterTable('all')">👁️ نمایش همه</button>
+                <button class="btn-util btn-small" onclick="filterTable('valid')" style="color: #10b981; border-color:#10b981;">✅ فقط معتبرها</button>
+                <button class="btn-util btn-small" onclick="filterTable('fake')" style="color: #ef4444; border-color:#ef4444;">❌ فقط فیک‌ها</button>
+                <div style="flex-grow: 1;"></div>
+                <button class="btn-util btn-small" onclick="copyValidCodes()" style="background: var(--primary); color:white; border:none;">📋 کپی فقط کدهای سالم</button>
+            </div>
+
+            <div id="verifyTableContainer" class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ردیف</th>
+                            <th>کد اصلی</th>
+                            <th>نوع</th>
+                            <th>مشخصات (سایت / ربات)</th>
+                            <th>وضعیت</th>
+                        </tr>
+                    </thead>
+                    <tbody id="verifyTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- مودال تایید پاکسازی -->
+<div id="confirm-modal" class="modal-backdrop">
+    <div class="modal-card">
+        <h3 style="margin-top:0;">پاکسازی تاریخچه</h3>
+        <p style="font-size: 13px; color: var(--text-muted);">آیا از حذف کل سوابق تولید اطمینان دارید؟</p>
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button class="btn-danger" style="flex:1;" onclick="confirmClearHistory()">بله، پاک شود</button>
+            <button class="btn-util" style="flex:1;" onclick="closeClearModal()">انصراف</button>
+        </div>
+    </div>
+</div>
+
+<div id="custom-toast">پیام</div>
+
+<div id="progress-overlay">
+    <div class="progress-box">
+        <h3 id="progress-text" style="margin:0; color:var(--text-main);">در حال تولید...</h3>
+        <div class="progress-bar-container">
+            <div id="progress-bar" class="progress-bar"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // دیتابیس کامل شامل پلن‌های اصلی، افزایش حجم و وایرگارد برای رمزگشایی هوشمند
+    const plansDB = {
+        // اشتراک‌های یک‌ماهه
+        "15": { type: "اشتراک", name: "یک‌ماهه | ۴۵ گیگ", woo: "5532", price: "99,000" },
+        "16": { type: "اشتراک", name: "یک‌ماهه | ۷۰ گیگ", woo: "5533", price: "159,000" },
+        "17": { type: "اشتراک", name: "یک‌ماهه | ۱۰۰ گیگ", woo: "5534", price: "199,000" },
+        "18": { type: "اشتراک", name: "یک‌ماهه | ۱۵۰ گیگ", woo: "5535", price: "269,000" },
+        // اشتراک‌های دوماهه
+        "27": { type: "اشتراک", name: "دوماهه | ۹۰ گیگ", woo: "6290", price: "225,000" },
+        "28": { type: "اشتراک", name: "دوماهه | ۱۵۰ گیگ", woo: "6291", price: "300,000" },
+        "29": { type: "اشتراک", name: "دوماهه | ۲۰۰ گیگ", woo: "6292", price: "360,000" },
+        "30": { type: "اشتراک", name: "دوماهه | ۳۰۰ گیگ", woo: "6293", price: "480,000" },
+        // اشتراک‌های سه‌ماهه
+        "19": { type: "اشتراک", name: "سه‌ماهه | ۱۰۰ گیگ", woo: "5536", price: "290,000" },
+        "20": { type: "اشتراک", name: "سه‌ماهه | ۲۰۰ گیگ", woo: "5538", price: "460,000" },
+        "21": { type: "اشتراک", name: "سه‌ماهه | ۳۰۰ گیگ", woo: "5540", price: "600,000" },
+        "25": { type: "اشتراک", name: "سه‌ماهه ۵۰۰G / شش‌ماهه ۴۰۰G", woo: "5541/5544", price: "1,200,000" },
+        // اشتراک‌های شش‌ماهه
+        "23": { type: "اشتراک", name: "شش‌ماهه | ۲۰۰ گیگ", woo: "5542", price: "610,000" },
+        "24": { type: "اشتراک", name: "شش‌ماهه | ۳۵۰ گیگ", woo: "5543", price: "910,000" },
+        "26": { type: "اشتراک", name: "شش‌ماهه | ۸۰۰ گیگ", woo: "5546", price: "1,600,000" },
+        // اشتراک‌های دوازده‌ماهه و افزایش حجم (مشترک در شناسه ربات 31 تا 34)
+        "31": { type: "پلن / حجم", name: "۱۲ماهه ۴۰۰G (19231) یا افزایش حجم ۲۰G", woo: "19231 / Data", price: "1,200,000 / 59,000" },
+        "32": { type: "پلن / حجم", name: "۱۲ماهه ۸۰۰G (19232) یا افزایش حجم ۵۰G", woo: "19232 / Data", price: "2,240,000 / 147,000" },
+        "33": { type: "پلن / حجم", name: "۱۲ماهه ۱۲۰۰G (19233) یا افزایش حجم ۱۰۰G", woo: "19233 / Data", price: "3,000,000 / 297,000" },
+        "34": { type: "پلن / حجم", name: "۱۲ماهه ۱۹۰۰G (19234) یا افزایش حجم ۲۰۰G", woo: "19234 / Data", price: "3,800,000 / 549,000" },
+        // پلن‌های وایرگارد (OpenVPN + WireGuard)
+        "49": { type: "🛡️ وایرگارد", name: "یک‌ماهه | ۳۰ گیگ (OpenVPN + WG)", woo: "1820", price: "199,000" },
+        "50": { type: "🛡️ وایرگارد", name: "یک‌ماهه | ۱۰۰ گیگ (OpenVPN + WG)", woo: "1920", price: "630,000" },
+        "51": { type: "🛡️ وایرگارد", name: "یک‌ماهه | ۱۵۰ گیگ (OpenVPN + WG)", woo: "2020", price: "898,000" },
+        "52": { type: "🛡️ وایرگارد", name: "یک‌ماهه | ۲۰۰ گیگ (OpenVPN + WG)", woo: "2120", price: "1,137,000" }
+    };
+
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+    let globalValidCodesList = [];
+    let currentPlanCategory = 'main'; // 'main' | 'data' | 'wg'
+
+    window.onload = function() {
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        if (savedTheme === 'light') toggleTheme(true);
+
+        const savedPlan = localStorage.getItem('lastPlanCodes');
+        if (savedPlan) document.getElementById('output-plan').innerText = savedPlan;
+
+        const savedWallet = localStorage.getItem('lastWalletCodes');
+        if (savedWallet) document.getElementById('output-wallet').innerText = savedWallet;
+
+        loadDashboardStats();
+        loadHistoryTable();
+    };
+
+    function showMsg(text, isError = false) {
+        const toast = document.getElementById('custom-toast');
+        toast.innerText = text;
+        toast.style.background = isError ? 'var(--danger)' : 'var(--success)';
+        toast.classList.add('toast-visible');
+        setTimeout(() => toast.classList.remove('toast-visible'), 3000);
+    }
+
+    function toggleTheme(forceLight = false) {
+        const body = document.body;
+        const btn = document.getElementById('themeBtn');
+        const isDark = body.getAttribute('data-theme') === 'dark';
+        
+        if (isDark || forceLight) {
+            body.setAttribute('data-theme', 'light');
+            btn.innerText = '🌙 تم تاریک';
+            localStorage.setItem('theme', 'light');
+        } else {
+            body.setAttribute('data-theme', 'dark');
+            btn.innerText = '☀️ تم روشن';
+            localStorage.setItem('theme', 'dark');
+        }
+    }
+
+    function switchTab(tabId, btnEl) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        
+        document.getElementById(tabId).classList.add('active');
+        if (btnEl) btnEl.classList.add('active');
+    }
+
+    // جابه‌جایی بین ۳ لیست مجزای پلن‌ها
+    function switchPlanCategory(category) {
+        currentPlanCategory = category;
+
+        // مخفی کردن تمام دراپ‌داون‌ها
+        document.querySelectorAll('.plan-selector').forEach(el => el.style.display = 'none');
+        
+        // ریست کردن استایل دکمه‌های ساب‌تب
+        document.getElementById('subBtn-main').className = 'sub-tab-btn';
+        document.getElementById('subBtn-data').className = 'sub-tab-btn';
+        document.getElementById('subBtn-wg').className = 'sub-tab-btn';
+
+        const titleEl = document.getElementById('planCardTitle');
+        const genBtn = document.getElementById('btnGenPlan');
+
+        if (category === 'main') {
+            document.getElementById('planSelect-main').style.display = 'block';
+            document.getElementById('subBtn-main').classList.add('active-sub-main');
+            titleEl.innerText = '🔑 ساخت عمده کد اشتراک (سرویس‌های اصلی)';
+            genBtn.className = 'btn-gen';
+        } else if (category === 'data') {
+            document.getElementById('planSelect-data').style.display = 'block';
+            document.getElementById('subBtn-data').classList.add('active-sub-data');
+            titleEl.innerText = '➕ ساخت کد افزایش حجم (Data)';
+            genBtn.className = 'btn-gen-data';
+        } else if (category === 'wg') {
+            document.getElementById('planSelect-wg').style.display = 'block';
+            document.getElementById('subBtn-wg').classList.add('active-sub-wg');
+            titleEl.innerText = '🛡️ ساخت کد وایرگارد (OpenVPN + WireGuard)';
+            genBtn.className = 'btn-gen-wg';
+        }
+    }
+
+    function clearBox(id) {
+        document.getElementById(id).innerText = "آماده...";
+        localStorage.removeItem(id === 'output-plan' ? 'lastPlanCodes' : 'lastWalletCodes');
+        showMsg("پاکسازی شد 🧹");
+    }
+
+    function clearVerify() {
+        document.getElementById('verifyInput').value = '';
+        document.getElementById('verifyTableBody').innerHTML = '';
+        document.getElementById('verifyTableContainer').style.display = 'none';
+        document.getElementById('verifyFilters').style.display = 'none';
+        globalValidCodesList = [];
+        showMsg("فرم پاک شد 🧹");
+    }
+
+    function getRandChars(len) {
+        let r = '';
+        for(let j=0; j<len; j++) r += chars.charAt(Math.floor(Math.random() * chars.length));
+        return r;
+    }
+
+    async function generateCodesAsync(type) {
+        const countInput = document.getElementById(type === 'plan' ? 'planCount' : 'walletCount');
+        let count = parseInt(countInput.value) || 300;
+        if (count < 1) return showMsg("تعداد نامعتبر است!", true);
+
+        // انتخاب دراپ‌داون فعال بر اساس دسته‌بندی فعلی
+        let selectEl;
+        if (type === 'plan') {
+            selectEl = document.getElementById(`planSelect-${currentPlanCategory}`);
+        } else {
+            selectEl = document.getElementById('walletAmount');
+        }
+        const optionEl = selectEl.options[selectEl.selectedIndex];
+        
+        const overlay = document.getElementById('progress-overlay');
+        const bar = document.getElementById('progress-bar');
+        const pText = document.getElementById('progress-text');
+        overlay.classList.add('active');
+        bar.style.width = '0%';
+        pText.innerText = `در حال تولید ${count} کد...`;
+
+        let resultCodes = [];
+        let chunkSize = 500;
+        let totalValueGenerated = 0;
+
+        for (let i = 0; i < count; i += chunkSize) {
+            await new Promise(resolve => setTimeout(resolve, 10));
+            
+            let end = Math.min(i + chunkSize, count);
+            for (let j = i; j < end; j++) {
+                let raw = "";
+                if (type === 'plan') {
+                    const botCode = optionEl.getAttribute('data-bot');
+                    const price = parseInt(optionEl.getAttribute('data-price'));
+                    totalValueGenerated += price;
+                    raw = getRandChars(3) + "-" + botCode + "-1";
+                } else {
+                    const amountToman = parseInt(optionEl.value);
+                    const amountRial = amountToman * 10;
+                    totalValueGenerated += amountToman;
+                    raw = getRandChars(5) + "-0-" + amountRial;
+                }
+                let b64 = btoa(raw).replace(/=/g, '');
+                resultCodes.push(b64);
+            }
+            bar.style.width = ((end / count) * 100) + '%';
+        }
+
+        const outText = resultCodes.join('\n');
+        document.getElementById(`output-${type}`).innerText = outText;
+        localStorage.setItem(type === 'plan' ? 'lastPlanCodes' : 'lastWalletCodes', outText);
+
+        // تعیین برچسب برای تاریخچه
+        let categoryLabel = '🔑 پلن';
+        if (type === 'plan') {
+            if (currentPlanCategory === 'data') categoryLabel = '➕ افزایش حجم';
+            else if (currentPlanCategory === 'wg') categoryLabel = '🛡️ وایرگارد';
+        } else {
+            categoryLabel = '💰 کیف پول';
+        }
+
+        updateDashboardStats(type, count, totalValueGenerated);
+        addHistoryRecord(categoryLabel, optionEl.text, count, outText);
+
+        setTimeout(() => { 
+            overlay.classList.remove('active');
+            showMsg(`✅ ${count} کد با موفقیت تولید شد.`);
+        }, 300);
+    }
+
+    function copyData(type) {
+        const t = document.getElementById(`output-${type}`).innerText;
+        if (!t || t.includes("آماده")) return showMsg("چیزی برای کپی نیست!", true);
+        
+        const ta = document.createElement("textarea");
+        ta.value = t; ta.style.position = "fixed"; ta.style.opacity = "0";
+        document.body.appendChild(ta); ta.select();
+        try { document.execCommand('copy'); showMsg("کپی شد! ✅"); } 
+        catch (e) { showMsg("خطا در کپی!", true); }
+        document.body.removeChild(ta);
+    }
+
+    function downloadData(type, format, contentStr = null, prefix = 'export') {
+        if (!contentStr) contentStr = document.getElementById(`output-${type}`).innerText;
+        if (contentStr.includes("آماده")) return showMsg("اول کدها را تولید کنید!", true);
+
+        const arr = contentStr.split('\n');
+        let finalContent = "";
+        let mimeType = format === 'csv' ? 'text/csv;charset=utf-8;' : 'text/plain';
+        let extension = format;
+
+        if (format === 'csv') {
+            finalContent = "\uFEFFردیف,نوع,مشخصات,کد\n"; 
+            let detail = type === 'plan' ? "اشتراک / سرویس" : "کیف پول";
+            arr.forEach((code, index) => {
+                finalContent += `${index + 1},${type === 'plan'?'سرویس':'شارژ'},${detail},${code}\n`;
+            });
+        } else {
+            finalContent = contentStr;
+        }
+
+        const element = document.createElement('a');
+        const file = new Blob([finalContent], {type: mimeType});
+        element.href = URL.createObjectURL(file);
+        element.download = `${prefix}-${Date.now()}.${extension}`;
+        document.body.appendChild(element);
+        element.click();
+        document.body.removeChild(element);
+    }
+
+    function getTodayStr() {
+        return new Date().toLocaleDateString('fa-IR');
+    }
+
+    function loadDashboardStats() {
+        let stats = JSON.parse(localStorage.getItem('hamon_stats')) || { date: getTodayStr(), plans: 0, wallets: 0, value: 0 };
+        if (stats.date !== getTodayStr()) {
+            stats = { date: getTodayStr(), plans: 0, wallets: 0, value: 0 };
+        }
+        document.getElementById('stat-plans').innerText = stats.plans.toLocaleString();
+        document.getElementById('stat-wallets').innerText = stats.wallets.toLocaleString();
+        document.getElementById('stat-value').innerText = stats.value.toLocaleString();
+        document.getElementById('stat-date').innerText = "تاریخ: " + stats.date;
+        localStorage.setItem('hamon_stats', JSON.stringify(stats));
+    }
+
+    function updateDashboardStats(type, count, value) {
+        let stats = JSON.parse(localStorage.getItem('hamon_stats'));
+        if (type === 'plan') stats.plans += count;
+        if (type === 'wallet') stats.wallets += count;
+        stats.value += value;
+        localStorage.setItem('hamon_stats', JSON.stringify(stats));
+        loadDashboardStats();
+    }
+
+    function addHistoryRecord(typeLabel, detail, count, rawData) {
+        let history = JSON.parse(localStorage.getItem('hamon_history')) || [];
+        const parts = detail.split('|');
+        const shortDetail = parts.length > 1 ? `${parts[0].trim()} - ${parts[1].trim()}` : parts[0];
+
+        const record = {
+            id: Date.now(),
+            date: new Date().toLocaleString('fa-IR'),
+            type: typeLabel,
+            detail: shortDetail,
+            count: count,
+            data: rawData
+        };
+        history.unshift(record);
+        if (history.length > 25) history.pop();
+        localStorage.setItem('hamon_history', JSON.stringify(history));
+        loadHistoryTable();
+    }
+
+    function loadHistoryTable() {
+        let history = JSON.parse(localStorage.getItem('hamon_history')) || [];
+        const tbody = document.getElementById('historyTableBody');
+        tbody.innerHTML = '';
+        if (history.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">تاریخچه‌ای وجود ندارد.</td></tr>';
+            return;
+        }
+        history.forEach(h => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="font-size:11px; direction:ltr;">${h.date}</td>
+                <td style="font-weight:bold;">${h.type}</td>
+                <td style="font-size:12px;">${h.detail}</td>
+                <td>${h.count}</td>
+                <td>
+                    <button class="btn-util btn-small" onclick="downloadHistory(${h.id})">⬇️ دانلود TXT</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function downloadHistory(id) {
+        let history = JSON.parse(localStorage.getItem('hamon_history')) || [];
+        let record = history.find(h => h.id === id);
+        if(record) {
+            const formatType = record.type.includes('کیف پول') ? 'wallet' : 'plan';
+            downloadData(formatType, 'txt', record.data, 'history');
+        }
+    }
+
+    // مدیریت مودال پاکسازی تاریخچه (بدون استفاده از confirm)
+    function openClearModal() {
+        document.getElementById('confirm-modal').style.display = 'flex';
+    }
+    function closeClearModal() {
+        document.getElementById('confirm-modal').style.display = 'none';
+    }
+    function confirmClearHistory() {
+        localStorage.removeItem('hamon_history');
+        loadHistoryTable();
+        closeClearModal();
+        showMsg("تاریخچه پاک شد.");
+    }
+
+    function verifyBatch() {
+        const inputRaw = document.getElementById('verifyInput').value.trim();
+        if(!inputRaw) return showMsg("هیچ کدی وارد نشده است!", true);
+
+        const lines = inputRaw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+        const tbody = document.getElementById('verifyTableBody');
+        document.getElementById('verifyTableContainer').style.display = 'block';
+        document.getElementById('verifyFilters').style.display = 'flex';
+        tbody.innerHTML = ''; 
+        globalValidCodesList = [];
+
+        lines.forEach((code, index) => {
+            let rowHtml = `<td>${index + 1}</td><td><span style="font-family:monospace;font-size:11px;color:var(--text-main);">${code}</span></td>`;
+            let isRowValid = false;
+
+            try {
+                let paddedCode = code;
+                while (paddedCode.length % 4 !== 0) paddedCode += '=';
+                let decoded = atob(paddedCode);
+                let parts = decoded.split('-');
+                
+                if (parts.length === 3) {
+                    let part1 = parts[1]; // Bot ID
+                    let part2 = parts[2]; // Price/Type
+                    
+                    if (part1 === '0') {
+                        let toman = parseInt(part2) / 10;
+                        let wooId = (toman === 200000) ? 4323 : (toman === 500000) ? 3496 : (toman === 1000000) ? 4325 : "ناشناس";
+                        rowHtml += `<td>💰 کیف پول</td>
+                                    <td>${toman.toLocaleString()} تومان<br><span style="font-size:11px;color:var(--text-muted)">محصول ووکامرس: ${wooId}</span></td>
+                                    <td class="status-ok">معتبر ✅</td>`;
+                        isRowValid = true;
+                    } else if (plansDB[part1] && part2 === '1') {
+                        let pData = plansDB[part1];
+                        rowHtml += `<td>${pData.type}</td>
+                                    <td>${pData.name}<br><span style="font-size:11px;color:var(--text-muted)">محصول: ${pData.woo} | کد ربات: #${part1}</span></td>
+                                    <td class="status-ok">معتبر ✅</td>`;
+                        isRowValid = true;
+                    } else {
+                        rowHtml += `<td>❓ ناشناس</td><td>شناسه ربات: #${part1}</td><td style="color:#eab308;font-weight:bold;">نیازمند بررسی ⚠️</td>`;
+                    }
+                } else {
+                     rowHtml += `<td>❌ نامعتبر</td><td>دستکاری شده</td><td class="status-bad">فیک ❌</td>`;
+                }
+            } catch(e) {
+                rowHtml += `<td>❌ نامعتبر</td><td>فرمت اشتباه</td><td class="status-bad">نامعتبر ❌</td>`;
+            }
+            
+            const tr = document.createElement('tr');
+            tr.innerHTML = rowHtml;
+            tr.setAttribute('data-status', isRowValid ? 'valid' : 'fake');
+            tbody.appendChild(tr);
+
+            if(isRowValid) globalValidCodesList.push(code);
+        });
+        showMsg("بررسی گروهی انجام شد.");
+    }
+
+    function filterTable(type) {
+        const rows = document.querySelectorAll('#verifyTableBody tr');
+        rows.forEach(row => {
+            if (type === 'all') {
+                row.classList.remove('hidden-row');
+            } else if (type === 'valid') {
+                if(row.getAttribute('data-status') === 'valid') row.classList.remove('hidden-row');
+                else row.classList.add('hidden-row');
+            } else if (type === 'fake') {
+                if(row.getAttribute('data-status') === 'fake') row.classList.remove('hidden-row');
+                else row.classList.add('hidden-row');
+            }
+        });
+    }
+
+    function copyValidCodes() {
+        if (globalValidCodesList.length === 0) return showMsg("هیچ کد معتبری یافت نشد!", true);
+        
+        const ta = document.createElement("textarea");
+        ta.value = globalValidCodesList.join('\n'); 
+        ta.style.position = "fixed"; ta.style.opacity = "0";
+        document.body.appendChild(ta); ta.select();
+        try { 
+            document.execCommand('copy'); 
+            showMsg(`تعداد ${globalValidCodesList.length} کد سالم کپی شد! ✅`); 
+        } catch (e) { showMsg("خطا در کپی!", true); }
+        document.body.removeChild(ta);
+    }
+</script>
+
+</body>
+</html>
